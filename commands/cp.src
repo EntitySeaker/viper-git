@@ -1,0 +1,57 @@
+cp = {}
+cp.name = "cp"
+cp.args = "[PATH] [DESTPATH]"
+cp.desc = "Copies a file or directory."
+cp.full_desc = "This command will copy a file or directory where [PATH] is the path of the file or directory and,\n [DESTPATH] the path where the file or directory should be copied to."
+cp.handler_types = ["start", "shell", "computer", "file"]
+cp.run = function(object, args)
+
+    if args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var") 
+    //command: cp
+    origFile = args[0]
+    destFolder = args[1]
+    file = findFile(object, origFile)
+    folder = findFile(object, destFolder)
+    if not file then; print("cp: can't find " + origFile); return; end if
+    if not parent_path(destFolder) then; print("cp: can't find " + parent_path(destFolder)); return; end if
+    newName = ""
+    if not folder then
+        //Check if the user wants to put a new name.
+        pathParent = parent_path(destFolder)           
+        if pathParent == destFolder then			
+            newName = destFolder
+            destFolder = file.parent.path		
+            output = file.copy(destFolder, newName)
+            if output and output != 1 then print(output)
+            exit
+        end if
+        folder = findFile(object, pathParent)
+        newName = destFolder[destFolder.len - (destFolder.len - pathParent.len):]			
+        if newName[0] == "/" then
+            newName = newName[1:]
+        end if
+        if not folder then; print("cp: can't copy file. " + parent_path(destFolder) + " doesn't exist."); return; end if
+    end if
+    if folder then
+        //Check if is trying to copy the file on itself. Ignored.
+        if parent_path(file.path) != parent_path(folder.path) or file.name != folder.name then
+            finalDest = folder.path    
+            if(newName.len == 0) then
+                newName = file.name
+            end if
+            if not folder.is_folder then			
+                finalDest = parent_path(file.path)
+                newName = folder.name
+            end if
+            output = file.copy(finalDest, newName)
+            if output and output != 1 then print(output)
+        end if
+    end if
+
+end function
+
+cp.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

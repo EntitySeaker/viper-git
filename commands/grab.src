@@ -1,0 +1,47 @@
+grab = {}
+grab.name = "grab"
+grab.args = "[BANK/MAIL/ALL]"
+grab.desc = "Grabs all banks and emails."
+grab.full_desc = "This command will grab all banks and emails where [BANK/MAIL/ALL] is what to grab."
+grab.handler_types = ["start", "shell", "computer", "file"]
+grab.run = function(object, args)
+
+    if not args or args.len != 1 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+
+    home = findFile(object, "/home")
+
+    if not home then
+        print("/home does not exist!")
+        return
+    end if
+
+    print(" ")
+    for folder in home.get_folders
+        if args[0].lower == "bank" or args[0].lower == "all" then
+            for config in folder.get_folders
+                for file in config.get_files
+                    if file.name == "Bank.txt" then print(file.get_content)
+                end for
+            end for
+        end if
+        if args[0].lower == "email" or args[0].lower == "mail" or args[0].lower == "all" then
+            for config in folder.get_folders
+                for file in config.get_files
+                    if file.name == "Mail.txt" then print(file.get_content)
+                end for
+            end for
+        end if
+        if args[0].lower != "bank" and args[0].lower != "mail" and args[0].lower != "email" and args[0].lower != "all" then
+            self.show_help
+            return
+        end if
+    end for
+    print(" ")
+
+end function
+
+grab.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

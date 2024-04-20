@@ -1,0 +1,32 @@
+back = {}
+back.name = "back"
+back.args = "[N/A]"
+back.desc = "Backs out to the previous session."
+back.full_desc = "This command will back out to the previous session."
+back.handler_types = ["start", "shell", "computer", "file"]
+back.run = function(object, args)
+
+    sessions = main_session.sessionList
+    if sessions.len then
+        main_session.object = sessions[-1].object
+        main_session.handlerType = sessions[-1].objectType
+        main_session.pub_ip = sessions[-1].IP
+        main_session.loc_ip = sessions[-1].localIP
+        main_session.current_user = sessions[-1].user
+        main_session.sessionList = sessions[:-1]
+        print("Going back to the previous position.")
+        return
+    end if
+    main_session.object = get_shell
+    main_session.handlerType = "start"
+    main_session.pub_ip = get_shell.host_computer.public_ip
+    if params.indexOf("-a") != null or params.indexOf("--anonymous") != null then main_session.pub_ip = "HIDDEN"
+    main_session.loc_ip = get_shell.host_computer.local_ip
+    main_session.current_user = active_user
+    print("Back at starting point.")
+
+end function
+
+back.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

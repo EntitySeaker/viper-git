@@ -1,0 +1,9 @@
+show_targets = function()
+    info = do_style("INDEX ", "title")+do_style("USER ", "title")+do_style("PUBLICIP ", "title")+do_style("LANIP ", "title")+do_style("OBJECT", "title")+char(10)+do_style("----- ", "text")+do_style("---- ", "text")+do_style("-------- ", "text")+do_style("----- ", "text")+do_style("------", "text")
+    for object in main_session.objectList
+        USER = do_style(object["value"]["user"]+" ", "text")
+        if object["value"]["user"] == "root" then USER = do_style("root ", "red", "static")
+        info = info+"\n"+do_style(object["key"]+" ", "text")+USER+do_style(object["value"]["IP"]+" ", "title")+do_style(object["value"]["localIP"]+" ", "text")+do_style(object["value"]["objectType"], "green", "static")
+    end for
+    print("\n"+format_columns(info)+"\n")
+end function

@@ -1,0 +1,25 @@
+shellPut = {}
+shellPut.name = "put"
+shellPut.args = "[HOSTPATH] [DESPATH]"
+shellPut.desc = "Uploads a file."
+shellPut.full_desc = "This command will upload a file where [HOSTPATH] is the path to the file or directory, and [DESTPATH] is the path to the directory to put the file."
+shellPut.handler_types = ["start", "shell"]
+shellPut.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then
+        hostPath = args[0]
+        filePath = args[1]
+        if filePath == "" or hostPath == "" then; self.show_help; return; end if
+        err = get_shell.scp(hostPath, filePath, object)
+    else if typeof(object) == "ftpshell" then
+        filePath = args[0]
+        hostPath = args[1]
+        err = get_shell.put(hostPath, filePath, object)
+    end if
+
+end function
+
+shellPut.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

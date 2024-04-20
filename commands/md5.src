@@ -1,0 +1,16 @@
+md5_hash = {}
+md5_hash.name = "md5"
+md5_hash.args = "[STRING]"
+md5_hash.desc = "Hashes a string with the md5 hash algorithm."
+md5_hash.full_desc = "This command will hash a string with the md5 hash algorithm where [STRING] is the string to hash."
+md5_hash.handler_types = ["start", "shell", "computer", "file"]
+md5_hash.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    print(char(10)+md5(args[0])+char(10))
+
+end function
+
+md5_hash.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

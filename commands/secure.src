@@ -1,0 +1,62 @@
+secure = {}
+secure.name = "secure"
+secure.args = "[-home/-server]"
+secure.desc = "Secures a pc or server."
+secure.full_desc = "This command will secure a pc or server where [-home/-server] is a homePC or server."
+secure.handler_types = ["start", "shell", "computer", "file"]
+secure.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    if userCheck(object) != "root" then; print("Root is required!"); return; end if
+
+    print("If you are running this from your homePC, please use -home")
+    if user_input("Continue? (y/n): ").lower != "y" then
+        print("Aborted")
+        return
+    end if
+
+    if args[0] == "-home" then
+        rootFS = findFile(object, "/")
+        rootFS.chmod("o-rwx", true)
+        rootFS.chmod("g-rwx", true)
+        rootFS.chmod("u-rwx", true)
+        rootFS.set_group("root", true)
+        rootFS.set_owner("root", true)
+
+        whitelisted = [
+            "/bin/sudo",
+            "/usr/bin/Terminal.exe",
+            "/usr/bin/AdminMonitor.exe",
+            "/usr/bin/ConfigLan.exe",
+            "/usr/bin/Mail.exe",
+            "/usr/bin/Browser.exe",
+            "/usr/bin/Notepad.exe",
+            "/usr/bin/Settings.exe",
+            "/usr/bin/Manual.exe",
+            "/usr/bin/Chat.exe",
+            ]
+
+        for program in whitelisted
+            file = findFile(object, program)
+            if file then file.chmod("g+x")
+        end for
+    else if args[0] == "-server" then
+        rootFS = findFile(object, "/")
+        rootFS.chmod("o-rwx", true)
+        rootFS.chmod("g-rwx", true)
+        rootFS.chmod("u-rwx", true)
+        rootFS.set_group("root", true)
+        rootFS.set_owner("root", true)
+    else
+        print("<color=red>Invalid arguments!</color>")
+        return
+    end if
+    print("<color=green>Filesystem secured!</color>")
+
+end function
+
+secure.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

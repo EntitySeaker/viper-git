@@ -1,0 +1,59 @@
+findlib = {}
+findlib.name = "findlib"
+findlib.args = "[LIB] [VERSION]"
+findlib.desc = "Scans greyhack for a library."
+findlib.full_desc = "This command will scan greyhack for a library where [LIB] is the library,\n and [VERSION] is the version."
+findlib.handler_types = ["start", "shell", "computer", "file"]
+findlib.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if args[0] == "kernel_router" then
+        count = 0
+        start = time
+        print(" ")
+        print(do_style("Searching for library "+args[0]+" "+args[1]+"...", "text"))
+        while true
+            if get_shell.host_computer.show_procs.split("Map").len > 1 then
+                break
+            end if
+            count = count+1
+            ip = get_random_ip
+            if not check_router(ip, args[1]) then continue
+            print(" ")
+            print(do_style("Library found!", "green", "static"))
+            print("IP containing kernel_router.so "+args[1]+" found at ip: "+ip)
+            print("Tried "+count+" times. Spent "+str(time - start)+" seconds.")
+            print(" ")
+            return
+            wait(0.01)
+        end while
+    end if
+
+    count = 0
+    start = time
+    print(" ")
+    print(do_style("Searching for library "+args[0]+" "+args[1]+"...", "text"))
+    while true
+        if get_shell.host_computer.show_procs.split("Map").len > 1 then
+            break
+        end if
+        count = count+1
+        ip = get_random_ip
+        router = get_router(ip)
+        if not router then router = get_switch(ip)
+        if not router then continue
+        if not check_service(router, args[0], args[1]) then continue
+        print(" ")
+        print(do_style("Library found!", "green", "static"))
+        print("IP containing service "+args[0]+" "+args[1]+" found at ip: "+ip)
+        print("Tried "+count+" times. Spent "+str(time - start)+" seconds.")
+        print(" ")
+        return
+        wait(0.01)
+    end while
+
+end function
+
+findlib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

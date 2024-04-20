@@ -1,0 +1,61 @@
+recursiveCheck = function(anyObject, maxdepth=20)
+    if maxdepth <= 0 then return false
+    if @anyObject isa map or @anyObject isa list then
+        for key in indexes(@anyObject)
+            if not recursiveCheck(@key, maxdepth-1) then return false
+        end for
+        for val in values(@anyObject)
+            if not recursiveCheck(@val, maxdepth-1) then return false
+        end for
+    end if
+    if @anyObject isa funcRef then return false
+    return true
+end function
+
+
+clearInterface = function(interface)
+    for k in indexes(@interface)
+        remove(@interface, @k)
+    end for
+    if not recursiveCheck(@interface) then exit("<color=red>AV detected something dangerous!.</color>")
+    return null
+end function
+
+
+verifyObject = function(object)
+    metaCheck = function(object)
+        return net_use(@object, "170.220.64.188", 0) != null
+    end function
+
+    cryptoCheck = function(object)
+        return smtp_user_list(@object, "170.220.64.188", 0) != null
+    end function
+
+    aptCheck = function(object)
+        return show(@object, "official_server") != null
+    end function
+
+    shellCheck = function(object)
+        return host_computer(@object) != null
+    end function
+
+    computerCheck = function(object)
+        return get_name(@object) != null
+    end function
+
+    fileCheck = function(object)
+        return name(@object) != null
+    end function
+
+    objects = {
+        "MetaxploitLib": {"check": @metaCheck},
+        "cryptoLib": {"check": @cryptoCheck},
+        "aptclientLib": {"check": @aptCheck},
+        "shell": {"check": @shellCheck},
+        "computer": {"check": @computerCheck},
+        "file": {"check": @fileCheck},
+    }
+
+    if @object == null then return null
+    return hasIndex(objects, typeof(@object)) and objects[typeof(@object)].check(@object)
+end function

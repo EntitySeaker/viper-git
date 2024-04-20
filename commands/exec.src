@@ -1,0 +1,27 @@
+exec = {}
+exec.name = "exec"
+exec.args = "[PATH]"
+exec.desc = "Executes a program."
+exec.full_desc = "This command will execute a program where [PATH] is the path to the program."
+exec.handler_types = ["start", "shell"]
+exec.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    program = args[0]
+    params = ""
+    if args.len >= 2 then
+        for arg in args[1:]
+            if params == "" then
+                params = arg
+                continue
+            end if
+            params = params+" "+arg
+        end for
+    end if
+    object.launch(program, params)
+
+end function
+
+exec.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

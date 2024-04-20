@@ -1,0 +1,7 @@
+sortMap = function(map)
+    new_map = {}
+    for i in map
+        new_map[new_map.len] = i.value
+    end for
+    return new_map
+end function

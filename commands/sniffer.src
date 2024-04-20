@@ -1,0 +1,21 @@
+sniff = {}
+sniff.name = "sniffer"
+sniff.args = "(-save)"
+sniff.desc = "Starts a sniffer."
+sniff.full_desc = "This command will start a sniffer where (-save) is wether or not to save the encode.src."
+sniff.handler_types = ["start", "shell", "computer", "file"]
+sniff.run = function(object, args)
+
+    if not main_session.MetaxploitLib then; print("Error: Can't find metaxploit library."); return; end if
+    print("Starting listen...\nWaiting to incoming data.")
+    save = false
+    if args and args[0] == "-save" then save = true
+    output = main_session.MetaxploitLib.sniffer(save)
+    if not output then; print("Unknown error: can't start to listening"); return; end if
+    print(output)
+
+end function
+
+sniff.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

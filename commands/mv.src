@@ -1,0 +1,66 @@
+mv = {}
+mv.name = "mv"
+mv.args = "[PATH] [DESTPATH]"
+mv.desc = "Moves a file or directory."
+mv.full_desc = "This command will move a file or directory where [PATH] is the path of the file or directory and,\n [DESTPATH] the path where the file or directory should be moved to."
+mv.handler_types = ["start", "shell", "computer", "file"]
+mv.run = function(object, args)
+
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")   
+    //command: mv
+    if not args or args.len != 2 then
+        self.show_help
+    else
+        origFile = args[0]
+        destFolder = args[1]
+        file = findFile(object, origFile)
+        if file == null then
+            print("mv: can't find " + origFile)
+        else
+            newName = ""
+            folder = findFile(object, destFolder)
+            if folder == null then
+                //Check if the user wants to put a new name.
+                pathParent = parent_path(destFolder)    
+                if pathParent == destFolder then			
+                    newName = destFolder
+                    destFolder = file.parent.path
+                    file.move(destFolder, newName)
+                else
+                    folder = findFile(object, pathParent)
+                    newName = destFolder[destFolder.len - (destFolder.len - pathParent.len):]			
+                    if newName[0] == "/" then
+                        newName = newName[1:]
+                        file.move(pathParent, newName)
+                    end if
+                    if folder == null then				
+                        print("mv: can't copy file. " + destFolder + " doesn't exist.")
+                    end if			
+                end if
+            else if folder != null then        
+                //Check if is trying to copy the file on itself. Ignored.
+                if parent_path(file.path) != parent_path(folder.path) or file.name != folder.name then
+                    finalDest = folder.path
+                    if(newName.len == 0) then
+                        newName = file.name
+                    end if
+                    if not folder.is_folder then			
+                        finalDest = parent_path(file.path)
+                        newName = folder.name
+                    end if
+                    if parent_path(file.path) == parent_path(folder.path) and newName != file.name then
+                        file.rename(newName)
+                    else
+                        file.move(finalDest, newName)
+                    end if
+                end if
+            end if
+        end if
+    end if
+
+end function
+
+mv.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

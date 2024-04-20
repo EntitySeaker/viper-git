@@ -1,0 +1,17 @@
+load_theme = {}
+load_theme.name = "load-theme"
+load_theme.args = "[N/A]"
+load_theme.desc = "Reloads theme."
+load_theme.full_desc = "This command will load the theme from the settings file."
+load_theme.handler_types = ["start", "shell", "computer", "file"]
+load_theme.run = function(_, _)
+
+    loadSettings("theme")
+    txt = do_style("Theme reloaded!", "green", "static")
+    print(char(10)+txt+char(10))
+
+end function
+
+load_theme.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

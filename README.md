@@ -1,2 +1,2 @@
-# viper-git
-A multipurpose hacking tool for Grey Hack
+# greyhack-viper
+Grey Hack Viper tool

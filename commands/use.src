@@ -1,0 +1,26 @@
+use = {}
+use.name = "use"
+use.args = "[INDEX]"
+use.desc = "Uses a selected target."
+use.full_desc = "This command will show all use a target where [INDEX] is the selected target."
+use.handler_types = ["start", "shell", "computer", "file"]
+use.run = function(object, args)
+
+    if not args then; show_help(commands.use.args, commands.use.full_desc, commands.use.handler_types); return; end if
+    index = args[0].to_int
+    if not main_session.objectList.hasIndex(index) then; print("Index not found!"); return; end if
+
+    add_session({"IP":main_session.pub_ip, "objectType":main_session.handlerType, "object":main_session.object, "localIP":main_session.loc_ip, "user":main_session.current_user})
+
+    info = main_session.objectList[index]
+    main_session.object = info.object
+    main_session.handlerType = info.objectType
+    main_session.pub_ip = info.IP
+    main_session.loc_ip = info.localIP
+    main_session.current_user = info.user
+
+end function
+
+use.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

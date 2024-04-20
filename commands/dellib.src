@@ -1,0 +1,25 @@
+dellib = {}
+dellib.name = "dellib"
+dellib.args = "[INDEX]"
+dellib.desc = "Deletes a library from the library list."
+dellib.full_desc = "This command will delete a library from the library list where [INDEX] is the library."
+dellib.handler_types = ["start", "shell", "computer", "file"]
+dellib.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    for index in args
+        if index.split("-").len == 2 then
+            for object in range(index.split("-")[0].to_int, index.split("-")[1].to_int)
+                main_session.libList.remove(object)
+            end for
+            continue
+        end if
+        main_session.libList.remove(index.to_int)
+    end for
+    globals.main_session.libList = sortMap(main_session.libList)
+
+end function
+
+dellib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

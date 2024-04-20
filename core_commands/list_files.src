@@ -1,0 +1,33 @@
+list_files = function(object, args)
+    if not args then; show_help("ls", commands.ls.args, commands.ls.full_desc, commands.ls.handler_types); return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    path = args[0]
+    folder = findFile(object, path)
+    output = "\n" + do_style("permissions", "red", "static")+" "+do_style("user", "red", "static")+" "+do_style("group", "red", "static")+" "+do_style("name", "red", "static") + "\n"+do_style("-----------", "text")+" "+do_style("----", "text")+" "+do_style("-----", "text")+" "+do_style("----", "text") + "\n"
+    if folder == null then; print("Does not exist!"); return; end if
+    for subFile in folder.get_folders + folder.get_files
+        nameFile = subFile.name
+		permission = subFile.permissions
+		owner = subFile.owner
+		size = subFile.size
+		group = subFile.group
+        nameFile = do_style(nameFile, "text")
+        if subFile.has_permission("r") and subFile.has_permission("w") and subFile.has_permission("x") then
+            permission = do_style(permission, "green", "static")
+            owner = do_style(owner, "green", "static")
+            group = do_style(group, "green", "static")
+        else if subFile.has_permission("r") or subFile.has_permission("w") or subFile.has_permission("x") then
+            permission = do_style(permission, "yellow", "static")
+            owner = do_style(owner, "yellow", "static")
+            group = do_style(group, "yellow", "static")
+        else
+            permission = do_style(permission, "red", "static")
+            owner = do_style(owner, "red", "static")
+            group = do_style(group, "red", "static")
+        end if
+        if subFile.is_folder then nameFile = do_style(subFile.name, "light_blue", "static")
+        output = output+permission+" "+owner+" "+group+" "+nameFile+"\n"
+    end for
+    print(format_columns(output)+"\n")
+end function

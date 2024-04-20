@@ -1,0 +1,22 @@
+TTY = function(object, handlerType, pub_ip, loc_ip, user_clean)
+    user = user_clean
+    if user == "root" then
+        user = do_style(user, "red", "static")
+        hst = do_style("@", "outline")+do_style("viper", "red", "static")
+        uic = "# "
+    else
+        user = do_style(user, "outline")
+        hst = do_style("@viper", "outline")
+        uic = "$ "
+    end if
+
+    fpub_ip = do_style(pub_ip, "title")
+    if handlerType == "start" then fpub_ip = do_style(pub_ip, "start_color")
+
+    tty = do_style("(", "outline")+user+hst+do_style(")——[", "outline")+fpub_ip+do_style("]——["+loc_ip+"]——[", "outline")+do_style(handlerType.upper, "handler_color")+do_style("]", "outline")
+    tty_clean = "("+user_clean+"@viper"+")——["+pub_ip+"]——["+loc_ip+"]——["+handlerType+"]"
+    spacing = 2.1
+    spacing = spacing+(tty_clean.len)*0.6
+    tty = do_style("———", "outline")+tty+do_style("<voffset=-0.5em><space=-"+spacing+"em>|<voffset=-1em><space=-0.6em>|<voffset=-1.5em><space=-0.3em>——", "outline")+do_style(uic, "title")
+    return tty
+end function

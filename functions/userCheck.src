@@ -1,0 +1,24 @@
+userCheck = function(fileObject) //check perm for npc machine
+    if not fileObject then; return "*guest"; end if
+    while fileObject.parent
+        fileObject = fileObject.parent
+    end while
+    homeFolder = null
+    for folder in fileObject.get_folders
+        if folder.name == "root" then
+            if folder.has_permission("w") and folder.has_permission("r") and folder.has_permission("x") then return "root"
+        end if
+        if folder.name == "home" then
+            homeFolder = folder
+        end if
+    end for
+    if not homeFolder then return "guest"
+    for folder in homeFolder.get_folders
+        if folder.name == "guest" then continue
+        if folder.chmod("u+rwx") == "" then
+            if folder.owner == folder.group then return folder.owner
+            return "*"+folder.group
+        end if
+    end for
+    return "guest"
+end function

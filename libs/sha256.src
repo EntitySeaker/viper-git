@@ -1,0 +1,118 @@
+sha256_hash = function(args)
+    x = args[0]
+    BLK=[[0]]
+    i=0
+    e=0
+    while i<x.len
+        e=4
+        while e>0 and x.hasIndex(i)
+            e=e-1
+            BLK[-1][-1]=BLK[-1][-1]+code(x[i])*256^e
+            i=i+1
+        end while
+        if e==0 then
+            if BLK[-1].len==16 then BLK=BLK+[[0]] else BLK[-1]=BLK[-1]+[0]
+        end if
+    end while
+    if e>0 then
+        BLK[-1][-1]=BLK[-1][-1]+(2147483648/256^(4-e))
+    else
+        BLK[-1][-1]=2147483648
+    end if
+    if BLK[-1].len==16 then BLK=BLK+[[0]]
+    while BLK[-1].len!=15
+        BLK[-1]=BLK[-1]+[0]
+    end while
+    BLK[-1]=BLK[-1]+[x.len*8]
+    add=function(a,b)
+        return (a+b)%4294967296
+    end function
+    XOR=function(a,b)
+        return bitwise("^",floor(a/65536),floor(b/65536))*65536+bitwise("^",a%65536,b%65536)
+    end function
+    AND=function(a,b)
+        return bitwise("&",floor(a/65536),floor(b/65536))*65536+bitwise("&",a%65536,b%65536)
+    end function
+    OR = function(a,b)
+        return bitwise("|",floor(a/65536),floor(b/65536))*65536+bitwise("|",a%65536,b%65536)
+    end function
+    NOT=function(n)
+        return 4294967295-n
+    end function
+    Ch=function(x,y,z)
+        return OR(AND(x,y),AND(NOT(x),z))
+    end function
+    Maj=function(x,y,z)
+        return OR(OR(AND(x,y),AND(x,z)),AND(y,z))
+    end function
+    shr=function(n,s)
+        return floor(n/2^s)
+    end function
+    rotr=function(n,r)
+        r=2^r
+        return (n%r)*(4294967296/r)+floor(n/r)
+    end function
+    sigma0=function(n)
+        return XOR(XOR(rotr(n,7),rotr(n,18)),shr(n,3))
+    end function
+    sigma1=function(n)
+        return XOR(XOR(rotr(n,17),rotr(n,19)),shr(n,10))
+    end function
+    SIGMA0=function(n)
+        return XOR(XOR(rotr(n,2),rotr(n,13)),rotr(n,22))
+    end function
+    SIGMA1=function(n)
+        return XOR(XOR(rotr(n,6),rotr(n,11)),rotr(n,25))
+    end function
+    K=[1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221]
+    K=K+[3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580]
+    K=K+[3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986]
+    K=K+[2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895]
+    K=K+[666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037]
+    K=K+[2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344]
+    K=K+[430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779]
+    K=K+[1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298]
+    H=[1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225]
+    for BL in BLK
+        W=BL[0:]
+        for i in range(16,63)
+            W=W+[add(add(add(sigma1(W[i-2]),W[i-7]),sigma0(W[i-15])),W[i-16])]
+        end for
+        a=H[0]
+        b=H[1]
+        c=H[2]
+        d=H[3]
+        e=H[4]
+        f=H[5]
+        g=H[6]
+        h=H[7]
+        for i in range(0,63)
+            T1=add(add(add(add(SIGMA1(e),Ch(e,f,g)),h),K[i]),W[i])
+            T2=add(SIGMA0(a),Maj(a,b,c))
+            h=g
+            g=f
+            f=e
+            e=add(d,T1)
+            d=c
+            c=b
+            b=a
+            a=add(T1,T2)
+        end for
+        H[0]=add(a,H[0])
+        H[1]=add(b,H[1])
+        H[2]=add(c,H[2])
+        H[3]=add(d,H[3])
+        H[4]=add(e,H[4])
+        H[5]=add(f,H[5])
+        H[6]=add(g,H[6])
+        H[7]=add(h,H[7])
+    end for
+    HT="0123456789abcdef"
+    HZ=""
+    for i in H.indexes
+        for j in range(7)
+            HZ=HZ+HT[floor(H[i]/16^j) % 16]
+        end for
+    end for
+    print(HZ)
+end function

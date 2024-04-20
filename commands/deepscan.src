@@ -1,0 +1,35 @@
+deepscan = {}
+deepscan.name = "deepscan"
+deepscan.args = "[IP]"
+deepscan.desc = "Scans every IP behind a router."
+deepscan.full_desc = "This command will scan every IP behind a router where [IP] is the IP,\n when used inside the network it will scan all IP's inside the network."
+deepscan.handler_types = ["start", "shell", "computer", "file"]
+deepscan.run = function(object, args)
+
+    if not args or not args.len then; self.show_help; return; end if
+    if args.len == 1 then
+        ip = args[0]
+        if not is_valid_ip(ip) then; print("IP "+ip+" not found!"); return; end if
+        router = get_router(ip)
+        if not router then; print(do_style("IP is not a router or public IP!", "red", "static")); return; end if
+        print(" ")
+        print(do_style(router.local_ip, "text").replace("\.",do_style(".", "title")))
+        ipscan(ip, [])
+        print(" ")
+        return
+    else if args.len >= 2 then
+        fileObject = object.host_computer.File("/var")
+        file = findFile(fileObject, args[1])
+        if file then
+            object.launch(args[1], args[0]+" deepscan")
+            return
+        end if
+        print("Jump file does not exist!")
+        return
+    end if
+
+end function
+
+deepscan.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

@@ -1,0 +1,21 @@
+deltarget = {}
+deltarget.name = "deltarget"
+deltarget.args = "[INDEX]"
+deltarget.desc = "Deletes a target from the targets list."
+deltarget.full_desc = "This command will delete target from the targets list, where [INDEX] is the index of the target."
+deltarget.handler_types = ["start", "shell", "computer", "file"]
+deltarget.run = function(object, args)
+    
+    if not args then
+        self.show_help()
+        return
+    end if
+
+    if args[0].lower() == "all" then args = ["0-1000"]
+    delete_target("objectList", args)
+
+end function
+
+deltarget.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

@@ -1,0 +1,22 @@
+deluser = {}
+deluser.name = "deluser"
+deluser.args = "[USER]"
+deluser.desc = "Deletes a user from the computer."
+deluser.full_desc = "This command will delete a user from the computer where [USER] is the user."
+deluser.handler_types = ["start", "shell", "computer"]
+deluser.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: userdel
+
+    output = object.delete_user(args[0], 0)
+    if output == true then; print("user " + args[0] + " deleted."); return; end if
+    if output then; print(output); return; end if
+    print("Error: user not deleted.")
+
+end function
+
+deluser.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

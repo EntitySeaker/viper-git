@@ -1,0 +1,49 @@
+kill = {}
+kill.name = "kill"
+kill.args = "[PID/ALL]"
+kill.desc = "Kills a process."
+kill.full_desc = "This command will kill a process where [PID] is the id of the process.\nMultiple process ids can be given or all for closing all."
+kill.handler_types = ["start", "shell", "computer"]
+kill.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+
+    if args[0].lower == "all" then
+        for proc in object.show_procs.split(char(10))
+            PID = proc.split(" ")[1].to_int
+            output = object.close_program(PID)
+            if output == true then
+                print("Process " + PID + " closed")
+                continue
+            else if output then
+                print(output)
+                continue
+            end if
+        end for
+        return
+    end if
+
+    for proc in args
+        PID = proc.to_int
+        if typeof(PID) != "number" then
+            print("The PID must be a number\n" + self.show_help)
+            continue
+        end if
+
+        output = object.close_program(PID)
+        if output == true then
+            print("Process " + PID + " closed")
+            continue
+        else if output then
+            print(output)
+            continue
+        end if
+        print("Process " + PID + " not found")
+    end for
+
+end function
+
+kill.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

@@ -1,0 +1,20 @@
+credits = {}
+credits.name = "credits"
+credits.args = "[N/A]"
+credits.desc = "Shows everyone that helped with Viper."
+credits.full_desc = "This command will show everyone that helped with Viper."
+credits.handler_types = ["start", "shell", "computer", "file"]
+credits.run = function(object, args)
+
+    string = char(10)
+    string = string+"Maintainer: Volk"+char(10)
+    string = string+"Viper is created by Volk."+char(10)
+    string = string+"My special thanks go to Eraser,"+char(10)
+    string = string+"for helping me refactor Viper into a more effecient program."+char(10)
+    print(string)
+
+end function
+
+credits.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

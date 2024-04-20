@@ -1,0 +1,25 @@
+shellGet = {}
+shellGet.name = "get"
+shellGet.args = "[REMPATH] [DESTPATH]"
+shellGet.desc = "Downloads a file."
+shellGet.full_desc = "This command will download a file where [REMPATH] is the path to the file or directory, and [DESTPATH] is the path to the directory to put the file."
+shellGet.handler_types = ["start", "shell"]
+shellGet.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then
+        filePath = args[0]
+        hostPath = args[1]
+        if filePath == "" or hostPath == "" then; self.show_help; return; end if
+        err = object.scp(filePath, hostPath, get_shell)
+    else if typeof(object) == "ftpshell" then
+        filePath = args[0]
+        hostPath = args[1]
+        err = object.put(filePath, hostPath, get_shell)
+    end if
+
+end function
+
+shellGet.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

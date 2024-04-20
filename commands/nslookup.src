@@ -1,0 +1,17 @@
+nsLookup = {}
+nsLookup.name = "nslookup"
+nsLookup.args = "[DOMAIN]"
+nsLookup.desc = "Returns the IP of a domain."
+nsLookup.full_desc = "This command will return the IP of a domain where [DOMAIN] is the domain."
+nsLookup.handler_types = ["start", "shell", "computer", "file"]
+nsLookup.run = function(object, args)
+
+    if not args then; show_help("nslookup", self.args, self.full_desc, self.handler_types); return; end if
+    nslookup_info = do_style("IP", "title")+do_style(": "+nslookup(args[0]), "text")
+    print("\n"+nslookup_info+"\n")
+
+end function
+
+nsLookup.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

@@ -1,0 +1,39 @@
+ftp = {}
+ftp.name = "ftp"
+ftp.args = "[USER@PASSWORD] [IP] (PORT)"
+ftp.desc = "Connects to a service using ftp."
+ftp.full_desc = "This command will connects to a server using ftp where [USER@PASSWORD] is the user and password,\n where [IP] is the IP of ther server,\n where (PORT) is an optional port."
+ftp.handler_types = ["start", "shell"]
+ftp.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    
+    //Command: ssh
+    credentials = args[0].split("@")
+    user = credentials[0]
+    password = credentials[1]
+
+    port = 21
+    // params is a list of strings, so you have to convert it to integer, which is what connect_service accepts.
+    if args.len == 3 then port = args[2].to_int
+    if typeof(port) != "number" then; print("Invalid port: " + port); return; end if
+    print("Connecting...")
+
+    remoteFtp = object.connect_service(args[1], port, user, password, "ftp")
+    if typeof(remoteFtp) == "string" then; print(remoteFtp); return; end if
+    if remoteFtp then
+        print("Connected!")
+        main_session.pub_ip = remoteShell.host_computer.public_ip
+        main_session.handlerType = typeof(remoteShell)
+        main_session.object = remoteShell
+        main_session.loc_ip = remoteShell.host_computer.local_ip
+        main_session.current_user = user
+    else 
+        print("connection failed")
+    end if
+
+end function
+
+ftp.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

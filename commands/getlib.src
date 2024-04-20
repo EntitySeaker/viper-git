@@ -1,0 +1,90 @@
+getlib = {}
+getlib.name = "getlib"
+getlib.args = "[PATH] [JUMPFILE]"
+getlib.desc = "Imports a library."
+getlib.full_desc = "This command will import a library where [PATH] is the path to the library,\n and [JUMPFILE] is the path to the jumpfile."
+getlib.handler_types = ["start", "shell"]
+getlib.run = function(object, args)
+    cargo = get_custom_object
+
+    if main_session.handlerType == "start" then
+        if not args or args.len < 1 then; self.show_help; return; end if
+        newObject = include_lib(args[0])
+        
+        if not newObject then; print("Unable to load library!"); return; end if
+        
+        if typeof(newObject) != "MetaxploitLib" and typeof(newObject) != "cryptoLib" and typeof(newObject) != "aptclientLib" then
+            print("Library "+typeof(newObject)+" unable to load!")
+            return
+        end if
+        
+        libVersion = "unknown"
+        if main_session.MetaxploitLibLocalIP+main_session.MetaxploitLibPublicIP == object.host_computer.local_ip+object.host_computer.public_ip then libVersion = main_session.MetaxploitLib.load(args[0]).version
+        if typeof(newObject) == "MetaxploitLib" then
+            libVersion = newObject.load(args[0]).version
+        else
+            for library in main_session.libList
+                if typeof(library["value"].lib) == "MetaxploitLib" and library["value"].publicIP == object.host_computer.public_ip and library["value"].localIP == object.host_computer.local_ip then
+                    libVersion = library["value"].lib.load(args[0]).version
+                end if 
+            end for
+        end if
+
+        main_session.libList[main_session.libList.len] = {"lib":newObject, "publicIP":object.host_computer.public_ip, "localIP":object.host_computer.local_ip, "version":libVersion, "used":0}
+        print("Library "+typeof(newObject).lower.replace("lib","")+" imported!")
+        return
+    end if
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    fileObject = object.host_computer.File("/var")
+    file = findFile(fileObject, args[1])
+    if file then
+        clearInterface(cargo)
+        object.launch(args[1], args[0])
+        if hasIndex(cargo, "glib") then
+            
+            if not verifyObject(@cargo.glib) then
+                print("AV detected injection!")
+                clearInterface(cargo)
+                return
+            end if
+
+            newObject = cargo.glib
+            clearInterface(cargo)
+        else
+            print("Jump file corrupted!")
+            clearInterface(cargo)
+            return
+        end if
+        
+        if not newObject then; print("Unable to load library!"); return; end if
+        
+        if typeof(newObject) != "MetaxploitLib" and typeof(newObject) != "cryptoLib" and typeof(newObject) != "aptclientLib" then
+            print("Library "+typeof(newObject)+" unable to load!")
+            return
+        end if
+
+        libVersion = "unknown"
+        if main_session.MetaxploitLibLocalIP+main_session.MetaxploitLibPublicIP == object.host_computer.local_ip+object.host_computer.public_ip then libVersion = main_session.MetaxploitLib.load(args[0]).version 
+        if typeof(newObject) == "MetaxploitLib" then
+            libVersion = newObject.load(args[0]).version
+        else
+            for library in main_session.libList
+                if typeof(library["value"].lib) == "MetaxploitLib" and library["value"].publicIP == object.host_computer.public_ip and library["value"].localIP == object.host_computer.local_ip then
+                    libVersion = library["value"].lib.load(args[0]).version
+                end if 
+            end for
+        end if
+    
+        main_session.libList[main_session.libList.len] = {"lib":newObject, "publicIP":object.host_computer.public_ip, "localIP":object.host_computer.local_ip, "version":libVersion, "used":0}
+        print("Library "+typeof(newObject).lower.replace("lib","")+" imported!")
+        return
+    end if
+    print("Jump file does not exist!")
+    return
+
+end function
+
+getlib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

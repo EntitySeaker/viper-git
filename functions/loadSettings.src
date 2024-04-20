@@ -1,0 +1,9 @@
+loadSettings = function(index=null)
+    configFile = get_shell.host_computer.File("/home/"+active_user+"/Config/Viper.conf")
+    if active_user() == "root" then configFile = get_shell.host_computer.File("/root/Config/Viper.conf")
+    if not configFile then return
+    settings = parse(configFile.get_content())
+    if not settings then return
+    if index != "vars" then user_session.theme = settings.theme
+    if index != "theme" then main_session.vars = settings.vars
+end function

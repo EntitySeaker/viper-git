@@ -1,0 +1,35 @@
+makeFile = {}
+makeFile.name = "touch"
+makeFile.args = "[PATH]"
+makeFile.desc = "Creates a file."
+makeFile.full_desc = "This command will make a file where [PATH] is the path of the file.\nYou can create multiple files at once."
+makeFile.handler_types = ["start", "shell", "computer"]
+makeFile.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: touch
+
+    for pathFile in args
+        pathParent = parent_path(pathFile)
+        computer = object
+
+        if pathParent == pathFile then
+            pathParent = current_path
+        end if
+
+        parent = computer.File(pathParent)
+
+        if not parent then; print("touch: " + pathParent + " not found"); return; end if
+        if not parent.has_permission("w") then; print("touch: permission denied"); return; end if
+
+        arrayPath = pathFile.split("/")
+        output = computer.touch(parent.path, arrayPath[arrayPath.len - 1])
+        if output and output != 1 then print(output)
+    end for
+
+end function
+
+makeFile.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

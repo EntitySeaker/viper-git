@@ -1,0 +1,29 @@
+msfvenom = {}
+msfvenom.name = "msfvenom"
+msfvenom.args = "[IP] [PORT] [PROC]"
+msfvenom.desc = "Starts a reverse shell."
+msfvenom.full_desc = "This command will start a reverse shell on the target,\n where [IP] is the IP of the rshell server,\n where [PORT] is the port of the rshell server,\n where [PROC] is the process's name."
+msfvenom.handler_types = ["start", "shell", "computer", "file"]
+msfvenom.run = function(object, args)
+
+    if not args or args.len != 3 then; self.show_help; return; end if
+    if not main_session.MetaxploitLib then
+        print("metaxploit.so not found!")
+        return
+    end if
+
+    ip = args[0]
+    port = args[1].to_int
+    procName = args[2]
+    if typeof(port) != "number" then; self.show_help; return; end if
+
+    main_session.MetaxploitLib.rshell_client(ip, port, procName)
+    line1 = "\n"+"rshell started at "+main_session.MetaxploitLibPublicIP+" on "+main_session.MetaxploitLibLocalIP+" as "+procName+"\n"
+    print(line1)
+    print("Connected to server "+ip+" on port "+port)
+
+end function
+
+msfvenom.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

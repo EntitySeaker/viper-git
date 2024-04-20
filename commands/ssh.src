@@ -1,0 +1,41 @@
+ssh = {}
+ssh.name = "ssh"
+ssh.args = "[USER@PASSWORD] [IP] (PORT)"
+ssh.desc = "Connects to a service using ssh."
+ssh.full_desc = "This command will connects to a server using ssh where [USER@PASSWORD] is the user and password,\n where [IP] is the IP of ther server,\n where (PORT) is an optional port."
+ssh.handler_types = ["start", "shell"]
+ssh.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    
+    //Command: ssh
+    credentials = args[0].split("@")
+    if credentials.len < 2 then; self.show_help; return; end if
+    user = credentials[0]
+    password = credentials[1]
+
+    port = 22
+    // params is a list of strings, so you have to convert it to integer, which is what connect_service accepts.
+    if args.len == 3 then port = args[2].to_int
+    if typeof(port) != "number" then; print("Invalid port: " + port); return; end if
+    print("Connecting...")
+
+    remoteShell = object.connect_service(args[1], port, user, password, "ssh")
+    if typeof(remoteShell) != "shell" then; print("Could not connect!"); return; end if
+    if remoteShell then
+        print("Connected!")
+        main_session.pub_ip = remoteShell.host_computer.public_ip
+        main_session.handlerType = typeof(remoteShell)
+        main_session.object = remoteShell
+        main_session.loc_ip = remoteShell.host_computer.local_ip
+        main_session.current_user = user
+        {"IP":remoteShell.host_computer.public_ip, "objectType":typeof(remoteShell), "object":remoteShell, "localIP":remoteShell.host_computer.local_ip, "user":user}
+    else 
+        print("connection failed")
+    end if
+
+end function
+
+ssh.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

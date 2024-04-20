@@ -1,0 +1,94 @@
+msfconsole = {}
+msfconsole.name = "msfconsole"
+msfconsole.args = "[N/A]"
+msfconsole.desc = "Starts a listiner for incomming rshells."
+msfconsole.full_desc = "This command will start an rshell listiner."
+msfconsole.handler_types = ["start", "shell", "computer", "file"]
+msfconsole.run = function(object, args)
+
+    if not main_session.MetaxploitLib then
+        print("metaxploit.so not found!")
+        return
+    end if
+
+    getNetcatConnections()
+    input = null
+    while input != "exit"
+        input = user_input("<u>meterpreter</u> > ")
+
+        //main_session.netcatList
+        if input.split(" ")[0] == "get" or input == "refresh" then
+            getNetcatConnections()
+        else if input.split(" ")[0] == "list" or input.split(" ")[0] == "sessions" then
+            output = "\n"
+            for netcatItem in main_session.netcatList
+                // print(GREEN+"<b>Shell ("+netcatItem.key+")</b>")
+                color = do_style(netcatItem.value["user"], "logo", "static")
+                if netcatItem.value["user"] == "root" then color = do_style(netcatItem.value["user"], "logo", "static")
+                // print(YELLOW+"User: "+color+netcatItem.value["user"])
+                // print(YELLOW+"Public IP: "+LIGHT_BLUE+netcatItem.value["IP"])
+                // print(YELLOW+"Local IP: "+ORANGE+netcatItem.value["localIP"])
+                output = output+do_style("("+netcatItem.key+")", "logo", "static")+do_style(" [*] ", "arg")+do_style(netcatItem.value["localIP"]+" Connected from "+netcatItem.value["IP"]+" as ", "logo", "static")+color+"\n"
+            end for
+            print(format_columns(output))
+            print(" ")
+        else if input.split(" ")[0] == "use" then
+            if input.split(" ").len() <= 1 then continue
+            index = input.split(" ")[1].to_int
+            if not main_session.netcatList.hasIndex(index) then
+                print("Index not found!")
+            else
+                main_session.object = main_session.netcatList[index].object
+                main_session.handlerType = typeof(main_session.netcatList[index].object)
+                main_session.pub_ip = main_session.netcatList[index].IP
+                main_session.loc_ip = main_session.netcatList[index].localIP
+                main_session.current_user = main_session.netcatList[index].user
+                break
+            end if
+
+        else if input.split(" ")[0] == "loop" or input.split(" ")[0] == "listen" or input.split(" ")[0] == "run" or input.split(" ")[0] == "start" then
+            print("execute the map program to exit")
+            print(do_style("Listining for connections on "+main_session.MetaxploitLibPublicIP+"...", "arg")+"\n")
+            listLen = main_session.netcatList.len
+            while true
+                getNetcatConnections(false)
+                if main_session.netcatList.len > listLen then
+                    listLen = main_session.netcatList.len
+                    line = do_style("[*] ", "arg")+do_style(main_session.netcatList[main_session.netcatList.len-1].localIP+" Connected from "+main_session.netcatList[main_session.netcatList.len-1].IP+" as "+main_session.netcatList[main_session.netcatList.len-1].user, "logo", "static")
+                    print(line)
+                end if
+                if get_shell.host_computer.show_procs.split("Map").len > 1 then
+                    break
+                end if
+            end while
+        else if input.split(" ")[0] == "clear" then
+            clear_screen
+        else if input.split(" ")[0] == "help" then
+            helpPage = {
+                "help":{"arguments":"N/A", "description":"Displays the help page."},
+                "clear":{"arguments":"N/A", "description":"Clears the screen."},
+                "get/refresh":{"arguments":"N/A", "description":"Updates connected shells list."},
+                "list/sessions":{"arguments":"N/A", "description":"Shows a list of connected shells."},
+                "loop/listen/run/start":{"arguments":"N/A", "description":"Loop that updates connected shells list."},
+                "use":{"arguments":"[INDEX]", "description":"Uses an index from the list."},
+                "exit":{"arguments":"N/A", "description":"Exits the msfconsole."},
+            }
+            str = do_style("COMMAND ARGUMENTS DESCRIPTION", "title")+"\n"
+            str = str+do_style("------- --------- -----------", "text")+"\n"
+            print(" ")
+            for line in helpPage
+                str = str+do_style(line.key+" "+line.value["arguments"]+" "+line.value["description"].replace(" ","|"), "text")+"\n"
+            end for
+            print(format_columns(str).replace("\|"," "))
+            print(" ")
+        else if input != "exit" then
+            print("Command "+input+" not found! Type help for help.")
+        end if
+        wait(0.01)
+    end while
+
+end function
+
+msfconsole.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

@@ -1,0 +1,66 @@
+sudo = {}
+sudo.name = "sudo"
+sudo.args = "[USER] [PASS] (JUMPPATH)"
+sudo.desc = "Changes the shell to another user."
+sudo.full_desc = "This command will change the shell to another user where [USER] is the user,\n where [PASS] is the password,\n where (JUMPPATH) is the path to the jumpfile."
+sudo.handler_types = ["start", "shell"]
+sudo.run = function(object, args)
+
+    if not args or args.len == 1 then; self.show_help; return; end if
+
+    if main_session.handlerType == "start" and args.len >= 2 then
+        newObject = get_shell(args[0], args[1])
+        if not newObject then return null
+        main_session.pub_ip = newObject.host_computer.public_ip
+        main_session.handlerType = "start"
+        main_session.object = newObject
+        main_session.loc_ip = newObject.host_computer.local_ip
+        main_session.current_user = userCheck(newObject.host_computer.File("/var"))
+        return
+    else if main_session.handlerType == "shell" and args.len >= 3 then
+        fileObject = object.host_computer.File("/var")
+        file = findFile(fileObject, args[2])
+        if file then
+
+            cargo = get_custom_object
+            clearInterface(cargo)
+            object.launch(args[2], args[0]+" "+args[1])
+
+            if not hasIndex(cargo, "gshell") then
+                print("Jump file corrupted!")
+                clearInterface(cargo)
+                return
+            end if
+
+            if @cargo.gshell == null then
+                print("Wrong password!")
+                clearInterface(cargo)
+                return
+            end if
+
+            if not host_computer(@cargo.gshell) then
+                print("AV detected injection!")
+                clearInterface(cargo)
+                return
+            end if
+
+            newObject = cargo.gshell
+            main_session.pub_ip = newObject.host_computer.public_ip
+            main_session.handlerType = typeof(newObject)
+            main_session.object = newObject
+            main_session.loc_ip = newObject.host_computer.local_ip
+            main_session.current_user = userCheck(newObject.host_computer.File("/var"))
+            clearInterface(cargo)
+            return
+        end if
+        print("Jump file does not exist!")
+        return
+    end if
+    self.show_help
+    return
+
+end function
+
+sudo.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

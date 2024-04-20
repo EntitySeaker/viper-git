@@ -1,0 +1,69 @@
+fs = {}
+fs.name = "fs"
+fs.args = "[N/A]"
+fs.desc = "Lists the whole filesystem."
+fs.full_desc = "This command will list the whole filesystem."
+fs.handler_types = ["start", "shell", "computer", "file"]
+fs.run = function(object, args)
+
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    FileSystem = {}
+    FileSystem.listFiles = function(handle)
+        tld = null
+        if typeof(handle) == "file" then
+            tld = FileSystem.file_get_tld(handle)
+        else
+            print("Handle not a file")
+            return null
+        end if
+        FileSystem.print_contents(tld)
+    end function
+    FileSystem.check_permissions = function(file)
+        if not file then
+            print("File " + file + " does not exist")
+            return null
+        end if
+        return file
+    end function
+    FileSystem.file_get_tld = function(handle)
+        tld = FileSystem.check_permissions(handle.parent)
+        while tld.path != "/"
+            tld = FileSystem.check_permissions(tld.parent)
+        end while
+        return tld
+    end function
+    FileSystem.print_contents = function(file, indent=0, newLine)
+        buffer = "―" * indent
+        file_name = do_style(file.name, "text")
+        if file.is_folder then
+            file_name = do_style(file.path, "light_blue", "static")
+        end if
+        if file.has_permission("r") and file.has_permission("w") and file.has_permission("x") then
+            line = newLine+do_style(buffer+"»"+file.permissions+" "+file.owner+" "+file.group+" "+file_name, "green", "static")
+        else if file.has_permission("r") or file.has_permission("w") or file.has_permission("x") then
+            line = newLine+do_style(buffer+"»"+file.permissions+" "+file.owner+" "+file.group+" "+file_name, "yellow", "static")
+        else
+            line = newLine+do_style(buffer+"»"+file.permissions+" "+file.owner+" "+file.group+" "+file_name, "red", "static")
+        end if
+        print(line)
+        if file.is_folder then
+            for sub_file in file.get_files
+                newLine = ""
+                FileSystem.print_contents(sub_file, indent+2, newLine)
+            end for
+            for folder in file.get_folders
+                newLine = char(10)
+                FileSystem.print_contents(folder, indent+2, newLine)
+            end for
+        end if
+    end function
+    print(" ")
+    FileSystem.listFiles(object)
+    print()
+
+end function
+
+fs.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

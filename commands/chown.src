@@ -1,0 +1,32 @@
+chown = {}
+chown.name = "chown"
+chown.args = "(-R) [OWNER] [PATH]"
+chown.desc = "Changes the owner of a file or directory."
+chown.full_desc = "This command will change the owner of a file or directory where (-R) is recursion,\n where [OWNER] is the new owner of the file or directory,\n where [PATH] is the path to the file or directory."
+chown.handler_types = ["start", "shell", "computer", "file"]
+chown.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    //command: chown
+    owner = args[0]
+    pathFile = args[1]
+    isRecursive = 0
+
+    if args.len == 3 then
+        owner = args[1]
+        pathFile = args[2]
+        isRecursive = 1
+    end if
+
+    file = findFile(object, pathFile)
+    if file == null then; print("chown: can't find " + pathFile); return; end if
+    output = file.set_owner(owner, isRecursive)
+    if output then print(output)
+
+end function
+
+chown.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

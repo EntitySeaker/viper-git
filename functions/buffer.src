@@ -1,0 +1,20 @@
+addToBuffer = function(command, args)
+    for i in args
+        if i != "" then command = command+" "+i
+    end for
+    main_session.commandBuffer.push(command)
+    if main_session.commandBuffer.len > 100 then main_session.commandBuffer.remove(0)
+end function
+
+listBuffer = function(args)
+    max = null
+    if not args then max=10
+    if not max and args[0] == "all" then max=100
+    if not max then max = args[0].to_int
+    if max > main_session.commandBuffer.len then max = main_session.commandBuffer.len
+    print(" ")
+    for command in main_session.commandBuffer[-max:]
+        print(command)
+    end for
+    print(" ")
+end function

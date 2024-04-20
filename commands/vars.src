@@ -1,0 +1,17 @@
+vars = {}
+vars.name = "vars"
+vars.args = "[N/A]"
+vars.desc = "Lists all the available variables."
+vars.full_desc = "This command will list all the variabels."
+vars.handler_types = ["start", "shell", "computer", "file"]
+vars.run = function(object, args)
+
+    for item in main_session.vars
+        print(item["key"]+": "+item["value"])
+    end for
+
+end function
+
+vars.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

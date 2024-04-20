@@ -1,0 +1,19 @@
+echo = {}
+echo.name = "echo"
+echo.args = "[STRING]"
+echo.desc = "Prints text to the screen."
+echo.full_desc = "This command will print text to the screen."
+echo.handler_types = ["start", "shell", "computer", "file"]
+echo.run = function(object, args)
+
+    string = ""
+    for word in args
+        string = string+word+" "
+    end for
+    print(char(10)+string+char(10))
+
+end function
+
+echo.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

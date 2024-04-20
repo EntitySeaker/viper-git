@@ -1,0 +1,28 @@
+write = {}
+write.name = "write"
+write.args = "[CONT] [>>/>] [PATH]"
+write.desc = "Writes to a file."
+write.full_desc = "This command will write to a file where [CONT] is the content you want to write to the file,\n where [>>/>] is the operator (>>) for appending to the file, (>) for replacing the contents,\n where [PATH] is the path of the file."
+write.handler_types = ["start", "shell", "computer", "file"]
+write.run = function(object, args)
+
+    if not args or args.len < 3 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+
+    newContent = args[0]
+    operator = args[1]
+    file = findFile(object, args[2])
+    if not file then; print("File: "+args[2]+" not found!"); return; end if
+
+    if operator == ">" then
+        file.set_content(newContent)
+    else if operator == ">>" then
+        file.set_content(file.get_content+newContent)
+    end if
+
+end function
+
+write.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

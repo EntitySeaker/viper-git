@@ -1,0 +1,33 @@
+chgrp = {}
+chgrp.name = "chgrp"
+chgrp.args = "(-R) [GROUP] [PATH]"
+chgrp.desc = "Changes the group of a file or directory."
+chgrp.full_desc = "This command will change the group of a file or directory where (-R) is recursion,\n where [GROUP] is the new group of the file or directory,\n where [PATH] is the path of the file or directory."
+chgrp.handler_types = ["start", "shell", "computer", "file"]
+chgrp.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    //command: chgrp
+
+    group = args[0]
+    pathFile = args[1]
+    isRecursive = 0
+
+    if args.len == 3 then
+        group = args[1]
+        pathFile = args[2]
+        isRecursive = 1
+    end if
+
+    file = findFile(object, pathFile)
+    if file == null then; print("chgrp: can't find " + pathFile); return; end if
+    output = file.set_group(group, isRecursive)
+    if output then print(output)
+
+end function
+
+chgrp.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

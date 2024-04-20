@@ -1,0 +1,45 @@
+wipe = {}
+wipe.name = "wipe"
+wipe.args = "(-y)"
+wipe.desc = "Wipes a machine."
+wipe.full_desc = "This command will wipe a machine where (-y) will skip the confirmation check."
+wipe.handler_types = ["start", "shell", "computer", "file"]
+wipe.run = function(object, args)
+
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+
+    if not args or args[0] != "-y" then
+        if user_input("Do you really want to wipe this system? (y/n): ").lower != "y" then
+            print("Aborted.")
+            return
+        end if
+    end if
+
+    files = ["/etc", "/lib", "/sys", "/root", "/home", "/var", "/bin", "/usr", "/boot"]
+
+    wipe_folder = function(path)
+        print("Removing "+path+"...")
+        file = findFile(object, path)
+        if file then
+            if file.has_permission("w") then
+                file.delete
+            else
+                print("No permission to "+file.name+"!")
+            end if
+        else
+            print("File "+path+" does not exist!")
+        end if
+        wait(0.5)
+    end function
+    
+    for filePath in files
+        wipe_folder(filePath)
+    end for
+    print("<color=green>System wipe done!</color>")
+
+end function
+
+wipe.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

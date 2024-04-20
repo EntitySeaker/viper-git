@@ -1,0 +1,36 @@
+rm = {}
+rm.name = "rm"
+rm.args = "[PATH]"
+rm.desc = "Removes a file or directory."
+rm.full_desc = "This command will remove a file or directory where [PATH] is the path to the file or directory."
+rm.handler_types = ["start", "shell", "computer", "file"]
+rm.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    //command: rm
+    isRecursive = 0
+    if args[0] == "-r" then
+        if args.len == 1 then; self.show_help; return; end if
+        isRecursive = 1
+        args = args[1:]
+    end if
+    for pathFile in args
+        file = findFile(object, pathFile)
+        if file == null then; print("rm: file not found: "+pathFile); return; end if
+        if not file.has_permission("w") then; print("rm: permission denied"); return; end if
+
+        if file.is_folder == 1 and isRecursive == 0 then
+            print("rm: " + file.name + " is a directory")
+        else
+            output = file.delete
+            if len(output) or output == null then print(output)
+        end if
+    end for
+
+end function
+
+rm.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

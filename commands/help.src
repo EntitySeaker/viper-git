@@ -1,0 +1,34 @@
+help = {}
+help.name = "help"
+help.args = "[COMMAND]"
+help.desc = "Displays the help page."
+help.full_desc = "This command will display the help pages. \nWhere [COMMAND] is a command that you would like a detailed discription about."
+help.handler_types = ["start", "shell", "computer", "file"]
+help.run = function(object, args)
+
+    if args and args[0] != "" then
+        if commands.hasIndex(args[0]) then
+            commands[args[0]].show_help
+            return
+        else
+            print("Command: "+args[0]+" not found!")
+            return
+        end if
+    else
+        string = do_style("COMMAND", "title")+" "+do_style("ARGUMENTS", "title")+" "+do_style("DESCRIPTION", "title")+"\n"+do_style("-------", "text")+" "+do_style("---------", "text")+" "+do_style("-----------", "text")+"\n"
+        for command in commands
+            if command.value.handler_types.indexOf(main_session.handlerType) == null then
+                string = string+do_style(command.value.name, "red", "static")+" "+do_style(command.value.args.replace(" ","|"), "red", "static")+" "+do_style(command.value.desc.replace(" ","|"), "text")+"\n"
+                continue
+            end if
+            string = string+do_style(command.value.name, "arg")+" "+do_style(command.value.args.replace(" ","|"), "arg")+" "+do_style(command.value.desc.replace(" ","|"), "text")+"\n"
+        end for
+
+        print("\n"+format_columns(string).replace("\|"," ")+"\n")
+    end if
+
+end function
+
+help.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

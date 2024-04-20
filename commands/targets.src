@@ -1,0 +1,15 @@
+targets = {}
+targets.name = "targets"
+targets.args = "[N/A]"
+targets.desc = "Shows all available targets."
+targets.full_desc = "This command will show all available targets."
+targets.handler_types = ["start", "shell", "computer", "file"]
+targets.run = function(object, args)
+
+    show_targets()
+
+end function
+
+targets.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

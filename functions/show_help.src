@@ -1,0 +1,20 @@
+show_help = function(name, args, full_desc, handler_types)
+    bac_args = args
+    bac_desc = full_desc
+    handlers = ""
+    for arg in args.split(" ")
+        args = args.replace(Escape(arg), do_style(arg, "arg"))+" "
+        full_desc = full_desc.replace(Escape(arg), do_style(arg, "arg"))+" "
+        full_desc = full_desc.replace(Escape("[true]"), do_style("[true]", "bool"))+" "
+        full_desc = full_desc.replace(Escape("[false]"), do_style("[false]", "bool"))+" "
+    end for
+    for handler_type in handler_types
+        handlers = handlers+do_style(handler_type, "arg")+", "
+    end for
+    handlers = handlers[:-2]
+    print("\n"+do_style(name, "arg")+" "+args+"\n")
+    print(full_desc+"\n")
+    print("This command can be used in the following handlers: "+handlers+"."+char(10))
+    args = bac_args
+    full_desc = bac_desc
+end function

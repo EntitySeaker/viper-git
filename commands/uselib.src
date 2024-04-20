@@ -1,0 +1,25 @@
+uselib = {}
+uselib.name = "uselib"
+uselib.args = "[INDEX]"
+uselib.desc = "Select a library."
+uselib.full_desc = "This command will select a library where [INDEX] is the index of the library."
+uselib.handler_types = ["start", "shell", "computer", "file"]
+uselib.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    index = args[0].to_int
+    if not main_session.libList.hasIndex(index) then; print("Index not found!"); return; end if
+    for libMap in main_session.libList
+        if typeof(libMap["value"].lib) == typeof(main_session.libList[index].lib) and libMap["value"].used then main_session.libList[libMap.key].used = 0
+    end for
+    main_session[typeof(main_session.libList[index].lib)+"Version"] = main_session.libList[index].version
+    main_session[typeof(main_session.libList[index].lib)+"PublicIP"] = main_session.libList[index].publicIP
+    main_session[typeof(main_session.libList[index].lib)+"LocalIP"] = main_session.libList[index].localIP
+    main_session[typeof(main_session.libList[index].lib)] = main_session.libList[index].lib
+    main_session.libList[index].used = 1
+
+end function
+
+uselib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function

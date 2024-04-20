@@ -1,6 +1,0 @@
-get_ssh = function(object, ip, port, user, pass)
-    if typeof(port) != "number" then return false
-    shell = object.connect_service(ip, port, user, pass)
-    if typeof(shell) != "shell" then return false
-    return shell
-end function

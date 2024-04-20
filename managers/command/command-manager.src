@@ -1,0 +1,107 @@
+import_code("../../libs/error.src")
+import_code("../../libs/functional.src")
+
+CommandManager = {}
+CommandManager.commands = {}
+CommandManager.aliases = {}
+CommandManager.mediator = null
+CommandManager.queue = []
+CommandManager.history = []
+CommandManager.getCommand = function(command)
+    if not(hasIndex(self.commands,command)) or self.commands[command] == null then return Error.New("There is no command with the name " + command)
+    return self.commands[command]
+end function
+CommandManager.executeCommand = function(str)
+    macroManager = self.mediator.getExtension("macroManager")
+
+    command = str.split(" ")[0]
+    args = slice(str.split(" "), 1).join(" ")
+    if hasIndex(self.aliases,command) then
+        alias = self.aliases[command]
+        command = alias.split(" ")[0]
+        newArgs = slice(alias.split(" "), 1)
+        if newArgs.len() > 0 then newArgs = newArgs.join(" ") + " "
+        if newArgs.len() == 0 then newArgs = ""
+        args = newArgs + args
+        return self.executeCommand(command + " " + args)
+    end if
+    if command.indexOf("@") == 0 then
+        result = macroManager.runMacro(slice(command, 1))
+        if result isa Error then self.queue.push(result)
+        return
+    end if
+    if not(hasIndex(self.commands,command)) or self.commands[command] == null then return self.queue.push(Error.New("There is no command with the name " + command))
+    command = self.commands[command]
+    self.queue.push([command,args])
+end function
+CommandManager.run = function()
+    while self.queue.len() > 0
+        resultOfExecution = self.tick()
+        if resultOfExecution isa Error then self.queue = []
+        self.printCommandResult(resultOfExecution)
+    end while
+end function
+CommandManager.tick = function()
+    if self.queue.len() == 0 then return
+    command = self.queue.pull()
+    if command isa Error then return command
+    self.history.insert(0, command)
+    hasPermissions = self.checkPermissions(command[0])
+    if hasPermissions isa Error then return hasPermissions
+    return command[0].execute(command[1], self.mediator)
+end function
+CommandManager.checkPermissions = function(command)
+    sessionManager = self.mediator.getExtension("sessionManager")
+    handler = sessionManager.currentSession.handler
+
+    object = handler.type()
+    privilege = handler.privilege()
+
+    if not(self.checkObject(object,command.permissions.object)) then return Error.New("You do not have the required object to run this command")
+    if not(self.checkPrivilege(privilege,command.permissions.privilege)) then return Error.New("You do not have the required privilege to run this command")
+end function
+CommandManager.checkObject = function(currentObject, requiredObject)
+    if requiredObject == null then return true
+    if requiredObject == "shell" and currentObject == "shell" then return true
+    if requiredObject == "computer" and (currentObject == "shell" or currentObject == "computer") then return true
+    if requiredObject == "file" and (currentObject == "shell" or currentObject == "computer" or currentObject == "file") then return true
+    return false
+end function
+CommandManager.checkPrivilege = function(currentPrivilege, requiredPrivilege)
+    if requiredPrivilege == null then return true
+    if currentPrivilege == "unknown" then return true
+    if requiredPrivilege == "root" and currentPrivilege == "root" then return true
+    if requiredPrivilege == "user" and (currentPrivilege == "root" or currentPrivilege == "user") then return true
+    if requiredPrivilege == "guest" and (currentPrivilege == "root" or currentPrivilege == "user" or currentPrivilege == "guest") then return true
+    return false
+end function
+CommandManager.printCommandResult = function(result)
+    if result isa Error then
+        print(result.message)
+    else if result != null then
+        print(result)
+    end if
+end function
+CommandManager.registerCommand = function(command)
+    self.commands[command.name] = command
+end function
+CommandManager.unregisterCommand = function(command)
+    self.commands[command.name] = null
+end function
+CommandManager.setMediator = function(mediator)
+    self.mediator = mediator
+end function
+CommandManager.addAlias = function(alias, str)
+    self.aliases[alias] = str
+end function
+CommandManager.removeAlias = function(alias)
+    self.aliases.remove(alias)
+end function
+CommandManager.New = function()
+    result = new CommandManager
+    result.commands = {}
+    result.aliases = {}
+    result.queue = []
+    result.history = []
+    return result
+end function

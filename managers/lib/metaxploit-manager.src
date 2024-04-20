@@ -1,0 +1,51 @@
+import_code("../../libs/error.src")
+import_code("./lib-manager.src")
+
+MetaxploitManager = {}
+MetaxploitManager.mediator = null
+MetaxploitManager.rShellList = function ()
+    libManager = self.mediator.getExtension("libManager")
+    if libManager.getCurrentLib(LIB_TYPES.METAXPLOIT) == null then return Error.New("No metaxploit library loaded")
+    currentMetaxploit = libManager.getCurrentLib(LIB_TYPES.METAXPLOIT).lib
+    return currentMetaxploit.rShellList()
+end function
+MetaxploitManager.connectRShell = function (address, port)
+    libManager = self.mediator.getExtension("libManager")
+    if libManager.getCurrentLib(LIB_TYPES.METAXPLOIT) == null then return Error.New("No metaxploit library loaded")
+    currentMetaxploit = libManager.getCurrentLib(LIB_TYPES.METAXPLOIT).lib
+    return currentMetaxploit.connectRShell(address, port)
+end function
+MetaxploitManager.getLib = function (address, port)
+    libManager = self.mediator.getExtension("libManager")
+    if libManager.getCurrentLib(LIB_TYPES.METAXPLOIT) == null then return Error.New("No metaxploit library loaded")
+    currentMetaxploit = libManager.getCurrentLib(LIB_TYPES.METAXPLOIT).lib
+    return currentMetaxploit.getLib(address, port)
+end function
+MetaxploitManager.hack = function (address, port, options)
+    libManager = self.mediator.getExtension("libManager")
+    if libManager.getCurrentLib(LIB_TYPES.METAXPLOIT) == null then return Error.New("No metaxploit library loaded")
+    currentMetaxploit = libManager.getCurrentLib(LIB_TYPES.METAXPLOIT).lib
+    if libManager.getPivotLib(LIB_TYPES.METAXPLOIT) == null then return Error.New("No metaxploit pivot library loaded")
+    pivotMetaxploit = libManager.getPivotLib(LIB_TYPES.METAXPLOIT).lib
+    if is_valid_ip(address) == false then
+        sessionManager = self.mediator.getExtension("sessionManager")
+        session = sessionManager.currentSession
+        handler = session.handler
+        address = handler.getFile(address)
+        if address isa Error then return address
+        address = address.path()
+    end if
+    lib = currentMetaxploit.getLib(address, port)
+    if lib isa Error then return lib
+    if is_valid_ip(port) then options = port
+    if options == null then return pivotMetaxploit.hack(lib, port)
+    return pivotMetaxploit.hack(lib, options)
+end function
+MetaxploitManager.setMediator = function (mediator)
+    self.mediator = mediator
+end function
+MetaxploitManager.New = function ()
+    self = new MetaxploitManager
+    self.mediator = null
+    return self
+end function

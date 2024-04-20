@@ -1,0 +1,112 @@
+import_code("../../libs/functional.src")
+import_code("../../libs/error.src")
+import_code("../../facades/lib-objects/metaxploit.src")
+import_code("../../facades/lib-objects/crypto.src")
+
+LIB_TYPES = {}
+LIB_TYPES.METAXPLOIT = "metaxploit"
+LIB_TYPES.CRYPTO = "crypto"
+
+Lib = {}
+Lib.data = {
+    "ip": null,
+    "version": null,
+}
+Lib.lib = null
+Lib.type = "unknown"
+Lib.setIp = function(ip)
+    self.data.ip = ip
+end function
+Lib.ip = function()
+    return self.data.ip
+end function
+Lib.version = function()
+    return self.data.version
+end function
+Lib.New = function(lib, data)
+    result = new Lib
+    result.lib = lib
+    result.data = {}
+    result.data.ip = null
+    result.data.version = "unknown"
+    result.type = "unknown"
+    if not(data.hasIndex("ip")) then return Error.New("Lib data must have ip")
+    if data.hasIndex("version") then result.data.version = data.version
+    result.data.ip = data.ip
+
+    if typeof(lib) == "MetaxploitLib" then result.lib = Metaxploit.New(lib)
+    if result.lib isa Metaxploit then result.type = LIB_TYPES.METAXPLOIT
+    if typeof(lib) == "cryptoLib" then result.lib = Crypto.New(lib)
+    if result.lib isa Crypto then result.type = LIB_TYPES.CRYPTO
+
+    if result.type == "unknown" then return Error.New("Lib type must be known")
+    return result
+end function
+
+LibManager = {}
+LibManager.mediator = null
+LibManager.libs = []
+LibManager.currentLibs = {
+    LIB_TYPES.METAXPLOIT: null,
+    LIB_TYPES.CRYPTO: null
+}
+LibManager.pivotLibs = {
+    LIB_TYPES.METAXPLOIT: null,
+    LIB_TYPES.CRYPTO: null
+}
+LibManager.addLib = function(lib, data)
+    lib = Lib.New(lib, data)
+    if lib isa Error then return lib
+   
+    self.libs.push(lib)
+    if self.currentLibs[lib.type] == null then self.currentLibs[lib.type] = lib
+    if self.pivotLibs[lib.type] == null then self.pivotLibs[lib.type] = lib
+
+    findMetaxploitOnIp = function(lib)
+        if lib.type == LIB_TYPES.METAXPLOIT and lib.ip.local == data.ip.local and lib.ip.public == data.ip.public then return true
+        return false
+    end function
+    if lib.type == LIB_TYPES.METAXPLOIT then
+        metalib = lib.lib.getLib(data.path)
+        if metalib == null then return Error.New("Metaxploit lib not found")
+        lib.data.version = metalib.version
+    else if some(self.libs, @findMetaxploitOnIp) then
+        metaxploit = find(self.libs, @findMetaxploitOnIp)
+        if metaxploit == null then return Error.New("Metaxploit lib not found")
+        metalib = metaxploit.lib.getLib(data.path)
+        if metalib == null then return Error.New("Metaxploit lib not found")
+        lib.data.version = metalib.version
+    end if
+end function
+LibManager.getLib = function(id)
+    if self.libs.hasIndex(id) then return self.libs[id]
+    return Error.New("Lib with id " + id + " not found")
+end function
+LibManager.getCurrentLib = function(libType)
+    return self.currentLibs[libType]
+end function
+LibManager.setCurrentLib = function(lib)
+    self.currentLibs[lib.type] = lib
+end function
+LibManager.getPivotLib = function(libType)
+    return self.pivotLibs[libType]
+end function
+LibManager.setPivotLib = function(libType, lib)
+    self.pivotLibs[libType] = lib
+end function
+LibManager.setMediator = function (mediator)
+    self.mediator = mediator
+end function
+LibManager.New = function()
+    result = new LibManager
+    result.libs = []
+    result.currentLibs = {
+        LIB_TYPES.METAXPLOIT: null,
+        LIB_TYPES.CRYPTO: null
+    }
+    result.pivotLibs = {
+        LIB_TYPES.METAXPLOIT: null,
+        LIB_TYPES.CRYPTO: null
+    }
+    return result
+end function

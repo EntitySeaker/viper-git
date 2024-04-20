@@ -1,0 +1,56 @@
+import_code("./computer.src")
+import_code("../../libs/error.src")
+import_code("../../facades/computer-objects/shell.src")
+import_code("../../utils/getUserFromHandler.src")
+
+ShellSession = new ComputerSession
+ShellSession.shell = null
+ShellSession.buildFile = function(path, pathOfNewFile)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return self.shell.buildFile(file.path, pathOfNewFile)
+end function
+ShellSession.executeFile = function(path, params = "")
+    file = self.getFile(path)
+    if file isa Error then return file
+    return self.shell.executeFile(file.path, params)
+end function
+ShellSession.connectTo = function(ip, port, username, password, service)
+    connectedShell = self.shell.connectTo(ip, port, username, password, service)
+    if connectedShell isa Error then return connectedShell
+    return ShellSession.New(connectedShell)
+end function
+ShellSession.getFileFrom = function(path, targetPath, otherSession)
+    folder = self.getFile(path)
+    if folder isa Error then return folder
+    if folder.type != "FOLDER" then return Error.New("Path is not a folder")
+    file = otherSession.getFile(targetPath)
+    if file isa Error then return file
+    if file.type != "FILE" then return Error.New("Target path is not a file")
+    return otherSession.shell.transferFile(file.path(), folder.path(), self.shell)
+end function
+ShellSession.putFileTo = function(path, targetPath, otherSession)
+    file = self.getFile(path)
+    if file isa Error then return file
+    if file.type != "FILE" then return Error.New("Path is not a file")
+    folder = otherSession.getFile(targetPath)
+    if folder isa Error then return folder
+    if folder.type != "FOLDER" then return Error.New("Target path is not a folder")
+    return self.shell.transferFile(file.path(), folder.path(), otherSession.shell)
+end function
+ShellSession.activate = function()
+    self.shell.activate()
+end function
+ShellSession.type = function()
+    return "shell"
+end function
+ShellSession.New = function(shell)
+    result = new ShellSession
+    result.shell = shell
+    result.computer = shell.getComputer()
+    result.root = climbFileToRoot(result.computer.getFile("/"))
+    result.current = result.computer.getFile("/")
+    result.user = getUserFromHandler(result)
+
+    return result
+end function

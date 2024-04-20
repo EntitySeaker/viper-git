@@ -1,0 +1,11 @@
+import_code("./libs/testing/mitest.src")
+import_code("./utils/string.src")
+import_code("./libs/functional.src")
+
+test "functional", function()
+    import_code("./libs/functional.test.src")
+end function
+
+test "string utils", function()
+    import_code("./utils/string.test.src")
+end function

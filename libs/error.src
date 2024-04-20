@@ -1,0 +1,6 @@
+Error = {}
+Error.New = function(message)
+    result = new self
+    result.message = message
+    return result
+end function

@@ -1,0 +1,11 @@
+import_code("../facades/computer-objects/file.src")
+import_code("../libs/error.src")
+
+climbFileToRoot = function(file)
+    if not(file isa File) then Error.New("file is not a File")
+    current = file
+    while not(current.parent isa Error)
+        current = current.parent
+    end while
+    return current
+end function

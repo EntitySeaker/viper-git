@@ -1,0 +1,16 @@
+ExtensionMediator = {}
+ExtensionMediator.extensions = {}
+ExtensionMediator.addExtension = function (name, extension)
+  self.extensions[name] = extension
+  extension.setMediator(self)
+end function
+ExtensionMediator.getExtension = function (name)
+  return self.extensions[name]
+end function
+ExtensionMediator.removeExtension = function (name)
+  self.extensions[name] = null
+end function
+ExtensionMediator.New = function ()
+    result = new ExtensionMediator
+    return result
+end function

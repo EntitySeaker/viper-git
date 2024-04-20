@@ -1,0 +1,23 @@
+import_code("../libs/error.src")
+
+getUserFromHandler = function (handler)
+    rootFile = handler.getFile("/root")
+    if not(rootFile isa Error) and rootFile.hasPermission("w") then 
+        return "root"
+    else 
+        homeFile = handler.getFile("/home")
+        if not(homeFile isa Error) then 
+            for user in homeFile.children()
+                if user.name() == "guest" then continue
+                if user.hasPermission("w") then 
+                    return user.name()
+                end if
+            end for
+        end if
+        guestFile = handler.getFile("/home/guest")
+        if not(guestFile isa Error) and guestFile.hasPermission("w") then 
+            return "guest"
+        end if
+    end if
+    return "unknown"
+end function

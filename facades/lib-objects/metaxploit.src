@@ -1,0 +1,76 @@
+import_code("../../libs/error.src")
+import_code("../../libs/functional.src")
+import_code("../computer-objects/computer-object-factory.src")
+
+Metaxploit = {}
+Metaxploit.metaxploit =  null
+Metaxploit.rShellList = function ()
+    objects = self.metaxploit.rshell_server()
+    if typeof(objects) == "string" then return Error.New(objects)
+    return map(objects, @computerObjectFactory)
+end function
+Metaxploit.connectRShell = function (address, port)
+    if not is_valid_ip(address) then return Error.New("Invalid IP address")
+    if typeof(port) != "number" and typeof(port) != "string" then return Error.New("Invalid port")
+    if typeof(port) == "string" then port = to_int(port)
+    result = self.metaxploit.rshell_client(address, port, "ps")
+    if result == false then return Error.New("An error occured while connecting to the server")
+end function
+Metaxploit.getLib = function (address, port)
+    if is_valid_ip(address) then
+        if port == null then return Error.New("Port is null")
+        result = self.metaxploit.net_use(address, to_int(port))
+        if result == null then return Error.New("An error occured while connecting to the server")
+        return result.dump_lib()
+    else
+        result = self.metaxploit.load(address)
+        if result == null then return Error.New("An error occured while loading the library")
+        return result
+    end if
+end function
+Metaxploit.hack = function(lib, options)
+    vulnaribilities = self.getVulnerabilities(lib)
+    if vulnaribilities isa Error then return vulnaribilities
+    handleHack = function (vulnaribility)
+        exploits = vulnaribility[1]
+        results = []
+        for exploit in exploits
+            if options == null then options = ""
+            result = lib.overflow(vulnaribility[0], exploit, options)
+            if result == string or result == null or result == number then continue
+            results.push(computerObjectFactory(result))
+        end for
+        return results
+    end function
+    handleFilter = function (vulnaribility)
+        return vulnaribility != null
+    end function
+    return flat(filter(map(vulnaribilities, @handleHack), @handleFilter))
+end function
+Metaxploit.getVulnerabilities = function (lib)
+    vulnaribleAreas = self.metaxploit.scan(lib)
+    if vulnaribleAreas == null then return Error.New("An error occured while scanning the library")
+    metaxploit = self.metaxploit
+    handleGetVulnerableString = function (vulnaribleArea)
+        vulnaribilities = outer.metaxploit.scan_address(lib, vulnaribleArea)
+        if vulnaribilities == null then return null
+        exploits = []
+        segments = vulnaribilities.split("Unsafe check: ")[1:]
+        for segment in segments
+            labelStart = segment.indexOf("<b>")
+            labelEnd = segment.indexOf("</b>")
+            exploits.push(segment[labelStart + 3: labelEnd])
+        end for
+        return [vulnaribleArea, exploits]
+    end function
+    handleFilter = function (vulnaribleArea)
+        return vulnaribleArea != null
+    end function
+    return filter(map(vulnaribleAreas, @handleGetVulnerableString), @handleFilter)
+end function
+Metaxploit.New = function (object)
+    if typeof(object) != "MetaxploitLib" then return Error.New("Object is not a MetaxploitLib")
+    result = new Metaxploit
+    result.metaxploit = object
+    return result
+end function

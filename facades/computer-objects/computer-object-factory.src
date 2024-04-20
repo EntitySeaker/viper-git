@@ -1,0 +1,11 @@
+import_code("./file.src")
+import_code("./computer.src")
+import_code("./shell.src")
+import_code("../../libs/error.src")
+
+computerObjectFactory = function (object)
+    if typeof(object) == "file" then return File.New(object)
+    if typeof(object) == "computer" then return Computer.New(object)
+    if typeof(object) == "shell" then return Shell.New(object)
+    return Error.New("Invalid object type")
+end function

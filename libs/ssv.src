@@ -1,0 +1,25 @@
+import_code("./functional.src")
+
+ssvToList = function (csv)
+    lineSplitter = function (line)
+        return line.split(" ")
+    end function
+    lines = map(csv.split("\n"), @lineSplitter)
+
+    names = []
+    firstLine = lines.pull()
+    for item in firstLine
+        names.push(item)
+    end for
+
+    result = []
+    for line in lines
+        row = {}
+        for i in range(0, names.len() - 1)
+            row[names[i]] = line[i]
+        end for
+        result.push(row)
+    end for
+
+    return result
+end function

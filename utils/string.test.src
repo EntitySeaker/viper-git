@@ -1,0 +1,11 @@
+test "startsWith", function()
+    expect(startsWith("Hello World", "Hello")).toBe(true)
+    expect(startsWith("Hello World", "World")).toBe(false)
+    expect(startsWith("/home/user", "/")).toBe(true)
+end function
+
+test "endsWith", function()
+    expect(endsWith("Hello World", "World")).toBe(true)
+    expect(endsWith("Hello World", "Hello")).toBe(false)
+    expect(endsWith("/home/user", "user")).toBe(true)
+end function

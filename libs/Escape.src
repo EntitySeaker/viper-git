@@ -1,3 +1,0 @@
-Escape = function(text)
-    return text.replace("(?=\\|\.|\+|\*|\?|\^|\$|\(|\)|\[|\]|\{|\}|\|)","\")
-end function

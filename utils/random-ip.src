@@ -1,0 +1,9 @@
+randomIp = function ()
+    ip = ""
+    for i in range(1, 4)
+        ip = ip + floor(rnd() * 255)
+        if i < 4 then ip = ip + "."
+    end for
+    if get_router(ip) == null then return randomIp()
+    return ip
+end function

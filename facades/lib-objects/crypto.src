@@ -1,0 +1,15 @@
+import_code("../../libs/error.src")
+
+Crypto = {}
+Crypto.crypto = null
+Crypto.decipher = function(str)
+    result = self.crypto.decipher(str)
+    if result == null then return Error.New("Decipher failed")
+    return result
+end function
+Crypto.New = function(object)
+    if typeof(object) != "cryptoLib" then return Error.New("Invalid crypto object")
+    result = new Crypto
+    result.crypto = object
+    return result
+end function

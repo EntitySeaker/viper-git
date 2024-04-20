@@ -1,0 +1,62 @@
+import_code("../../libs/functional.src")
+import_code("../../libs/error.src")
+import_code("./session.src")
+
+SessionManager = {}
+SessionManager.mediator = null
+SessionManager.sessions = []
+SessionManager.sessionChain = []
+SessionManager.currentSession = null
+SessionManager.pivotSession = null
+SessionManager.addSession = function (object, data)
+    session = Session.New(object, data)
+    if session isa Error then return session
+    self.sessions.push(session)
+    if self.currentSession == null then self.setCurrentSession(0)
+    if self.pivotSession == null then self.setPivotSession(0)
+    return session
+end function
+SessionManager.removeSession = function (sessionIndex)
+    i = 0
+    handleFilterSession = function (s)
+        oldI = i
+        outer.i = i + 1
+        return oldI != sessionIndex
+    end function
+    self.sessions = filter(self.sessions, @handleFilterSession)
+end function
+SessionManager.setCurrentSession = function (sessionIndex)
+    if hasIndex(self.sessions, sessionIndex) then
+        self.currentSession = self.sessions[sessionIndex]
+        self.sessionChain.push(self.currentSession)
+    else
+        return Error.New("Session Index(" + sessionIndex + ") is out of range")
+    end if
+end function
+SessionManager.setPivotSession = function (sessionIndex)
+    if hasIndex(self.sessions, sessionIndex) then
+        self.pivotSession = self.sessions[sessionIndex]
+    else
+        return Error.New("Session Index(" + sessionIndex + ") is out of range")
+    end if
+end function
+SessionManager.getSessionIndex = function (session)
+    return indexOf(self.sessions, session)
+end function
+SessionManager.goBack = function ()
+    if self.sessionChain.len > 1 then
+        self.sessionChain.pop()
+        self.currentSession = self.sessionChain[self.sessionChain.len - 1]
+    else
+        exit()
+    end if
+end function
+SessionManager.setMediator = function (mediator)
+    self.mediator = mediator
+end function
+SessionManager.New = function ()
+    result = new SessionManager
+    result.sessions = []
+    result.sessionChain = []
+    return result
+end function

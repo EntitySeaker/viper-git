@@ -1,0 +1,124 @@
+import_code("../../libs/error.src")
+import_code("../../libs/functional.src")
+
+FILE_TYPES = {}
+FILE_TYPES.FILE = "FILE"
+FILE_TYPES.FOLDER = "FOLDER"
+
+File = {}
+File.file = null
+File.setPermissions = function (newPermissions, recersive = false)
+    result = self.file.chmod(newPermissions, recersive)
+    if result.len() > 0 then return Error.New(result)
+end function
+File.setOwner = function (newOwner, recersive = false)
+    result = self.file.set_owner(newOwner, recersive)
+    if result.len() > 0 then return Error.New(result)
+end function
+File.setGroup = function (newGroup, recersive = false)
+    result = self.file.set_group(newGroup, recersive)
+    if result.len() > 0 then return Error.New(result)
+end function
+File.hasPermission = function (permission)
+    return self.file.has_permission(permission)
+end function
+File.permissions = function ()
+    return self.file.permissions()
+end function
+File.copy = function (destination, name)
+    if name == null then name = self.name()
+    result = self.file.copy(destination, name)
+    if typeof(result) == "string" then return Error.New(result)
+end function
+File.delete = function ()
+    if self.type() == FILE_TYPES.FOLDER then
+        children = self.children()
+        if children isa Error then return Error.New(children)
+        deleteChildrenHandler = function (child)
+            return child.delete()
+        end function
+        forEach(children, @deleteChildrenHandler)
+    end if
+    if self.path() != "/" then return self.file.delete()
+end function
+File.content = function ()
+    if self.type() == FILE_TYPES.FOLDER then return Error.New("Not able to get content of a folder")
+    result = self.file.get_content()
+    if result == null then return Error.New("Not able to read file content")
+    return result
+end function
+File.setContent = function (newContent)
+    if self.type() == FILE_TYPES.FOLDER then return Error.New("Not able to set content of a folder")
+    result = self.file.set_content(newContent)
+    if not(result) then return Error.New(result)
+end function
+File.appendContent = function (newContent)
+    if self.type() == FILE_TYPES.FOLDER then return Error.New("Not able to set content of a folder")
+    oldContent = self.content()
+    if oldContent isa Error then return oldContent
+    result = self.setContent(oldContent + newContent)
+    return result
+end function
+File.children = function ()
+    if self.type() == FILE_TYPES.FILE then return Error.New("Not able to get children of a file")
+    children = self.file.get_files() + self.file.get_folders()
+    makeAllChildrenFileHandler = function (child)
+        return File.New(child)
+    end function
+    return map(children, @makeAllChildrenFileHandler)
+end function
+File.child = function (name)
+    children = self.children()
+    if children isa Error then return null
+    findChildrenHandler = function (child)
+        return child.name() == name
+    end function
+    result = find(children, @findChildrenHandler)
+    if result == null then return Error.New("Not able to find child")
+    return result
+end function
+File.hasChild = function (name)
+    children = self.child(name)
+    if children isa Error then return false
+    return true
+end function
+File.parent = function ()
+    parent = self.file.parent()
+    if parent == null then return Error.New("Not able to get parent of root")
+    return File.New(parent)
+end function
+File.move = function (destination, name)
+    if name == null then name = self.name()
+    result = self.file.move(destination, name)
+    if typeof(result) == "string" then return Error.New(result)
+end function
+File.name = function ()
+    return self.file.name()
+end function
+File.setName = function (newName)
+    result = self.file.rename(newName)
+    if typeof(result) == "string" then return Error.New(result)
+end function
+File.type = function ()
+    isFolder = self.file.is_folder()
+    if isFolder then return FILE_TYPES.FOLDER
+    return FILE_TYPES.FILE
+end function
+File.size = function ()
+    return self.file.size()
+end function
+File.path = function ()
+    return self.file.path()
+end function
+File.owner = function ()
+    return self.file.owner()
+end function
+File.group = function ()
+    return self.file.group()
+end function
+File.New = function (file)
+    if typeof(file) != "file" then return Error.New("Not able to create file object from non file object")
+    result = new self
+    result.file = file
+    return result
+end function

@@ -1,0 +1,53 @@
+color = function(hex)
+    result = function(str)
+        return "<color=" + hex + ">" + str + "</color>"
+    end function
+    return @result
+end function
+
+THEME_COLORS = {
+    "HIGHLIGHT": "highlight",
+    "TEXT": "text",
+    "SECONDARY": "secondary",
+    "WARNING": "warning",
+    "INFO": "info",
+    "SUCCESS": "success",
+    "DANGER": "danger",
+    "ERROR": "error",
+}
+
+ThemeManager = {}
+ThemeManager.mediator = null
+ThemeManager.colors = {
+    "highlight": "#c3201f",
+    "text": "#fff",
+    "secondary": "#343434",
+    "warning": "#fffc33",
+    "info": "#058fab",
+    "success": "#0f0",
+    "danger": "#c3201f",
+    "error": "#c3201f",
+}
+ThemeManager.colorText = function(color, str)
+    color = self.color(color)
+    return color(str)
+end function
+ThemeManager.color = function(name, str)
+    return @color(self.colors[name])
+end function
+ThemeManager.setMediator = function (mediator)
+    self.mediator = mediator
+end function
+ThemeManager.init = function()
+    configManager = self.mediator.getExtension("configManager")
+    if not configManager.config.hasIndex("theme") then
+        configManager.saveConfig({"theme": self.colors})
+    end if
+    self.colors = self.colors + configManager.config.theme
+    configManager.saveConfig({"theme": themeManager.colors})
+end function
+ThemeManager.New = function()
+    result = new ThemeManager
+    result.colors = ThemeManager.colors
+    return result
+end function

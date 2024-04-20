@@ -1,0 +1,56 @@
+import_code("../../libs/json.src")
+import_code("../../libs/error.src")
+
+ConfigManager = {}
+ConfigManager.mediator = null
+ConfigManager.config = null
+ConfigManager.saveConfig = function (config)
+    self.config = self.config + config
+    self.saveConfigToFile()
+end function
+ConfigManager.saveConfigToFile = function ()
+    file = self.getConfigFile()
+    if file isa Error then return file
+
+    file.setContent(toJSON(self.config))
+end function
+ConfigManager.init = function ()
+    file = self.getConfigFile()
+    if file isa Error then return file
+
+    config = file.content()
+    if config == "" then
+        file.setContent("{}")
+        config = file.content()
+    end if
+    self.config = parse(config)
+end function
+ConfigManager.getConfigFile = function ()
+    sessionManager = self.mediator.getExtension("sessionManager")
+    pivotSession = sessionManager.pivotSession
+    handler = pivotSession.handler
+
+    user = handler.user
+    folder = handler.getFile("/home/guest/Config")
+    if user == "root" then
+        folder = handler.getFile("/root/Config")
+    else if user != "guest" then
+        folder = handler.getFile("/home/" + user + "/Config")
+    end if
+    if folder isa Error then return Error.New("Could not get config folder")
+
+    file = handler.getFile(folder.path() + "/viper-config.json")
+    if file isa Error then 
+        handler.createFile(folder.path() + "/viper-config.json")
+        file = handler.getFile(folder.path() + "/viper-config.json")
+        if file isa Error then return Error.New("Could not create config file")
+    end if
+    return file
+end function
+ConfigManager.setMediator = function (mediator)
+    self.mediator = mediator
+end function
+ConfigManager.New = function()
+    result = new ConfigManager
+    return result
+end function

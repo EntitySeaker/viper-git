@@ -1,0 +1,7 @@
+startsWith = function (str, prefix) 
+    return str.indexOf(prefix) == 0
+end function
+
+endsWith = function (str, suffix) 
+    return str.indexOf(suffix) == str.len - suffix.len
+end function

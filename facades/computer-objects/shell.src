@@ -1,0 +1,37 @@
+import_code("../../libs/error.src")
+import_code("./computer.src")
+
+Shell = {}
+Shell.shell = null
+Shell.getComputer = function()
+    result = self.shell.host_computer()
+    if result == null then return Error.New("No computer found")
+    return Computer.New(result)
+end function
+Shell.transferFile = function(fileLocation, transferFolderLocation, otherShell)
+    result = self.shell.scp(fileLocation, transferFolderLocation, otherShell.shell)
+    if typeof(result) == "string" then return Error.New(result)
+    return result
+end function
+Shell.executeFile = function(fileLocation, params = "")
+    result = self.shell.launch(fileLocation, params)
+    if result == false then return Error.New("Failed to execute file")
+end function
+Shell.buildFile = function(fileLocation, newFileLocation)
+    result = self.shell.build(fileLocation, newFileLocation)
+    if result != "" then return Error.New(result)
+end function
+Shell.connectTo = function(ip, port, user, pass, service = "ssh")
+    result = self.shell.connect_service(ip, port, user, pass, service)
+    if typeof(result) == "string" then return Error.New(result)
+    return Shell.New(result)
+end function
+Shell.activate = function()
+    self.shell.start_terminal()
+end function
+Shell.New = function(shell)
+    if typeof(shell) != "shell" then return Error.New("Invalid shell")
+    result = new Shell
+    result.shell = shell
+    return result
+end function

@@ -1,0 +1,53 @@
+import_code("../../libs/error.src")
+
+MacroManager = {}
+MacroManager.mediator = null
+MacroManager.init = function ()
+    return self.runMacro("init")
+end function
+MacroManager.runMacro = function (name)
+    commandManager = self.mediator.getExtension("commandManager")
+    macro = self.getMacro(name)
+    if macro isa Error then return Error.New("Could not find macro " + name)
+
+    lines = macro.split("\n")
+    for line in lines
+        commandManager.executeCommand(line)
+    end for
+end function
+MacroManager.getMacro = function (name)
+    folder = self.getMacroFolder()
+    if folder isa Error then return folder
+    macro = folder.child(name)
+    if macro isa Error then return macro
+    return macro.content
+end function
+MacroManager.getMacroFolder = function ()
+    sessionManager = self.mediator.getExtension("sessionManager")
+    pivotSession = sessionManager.pivotSession
+    handler = pivotSession.handler
+
+    user = handler.user
+    folder = handler.getFile("/home/guest/Config")
+    if user == "root" then
+        folder = handler.getFile("/root/Config")
+    else if user != "guest" then
+        folder = handler.getFile("/home/" + user + "/Config")
+    end if
+
+    if folder isa Error then return Error.New("Could not get config folder")
+
+    macroFolder = folder.child("Macros")
+    if macroFolder isa Error then handler.createFolder(folder.path() + "/Macros")
+    macroFolder = folder.child("Macros")
+    if macroFolder isa Error then return Error.New("Could get macro folder")
+    return macroFolder
+end function
+MacroManager.setMediator = function (mediator)
+    self.mediator = mediator
+end function
+MacroManager.New = function ()
+    self = new MacroManager
+    self.mediator = null
+    return self
+end function

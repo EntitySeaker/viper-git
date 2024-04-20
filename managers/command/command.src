@@ -1,0 +1,177 @@
+import_code("../../libs/error.src")
+import_code("../../libs/functional.src")
+
+PARAMETER_TYPES = {
+    "STRING": "string",
+    "NUMBER": "number",
+    "BOOLEAN": "boolean",
+    "REST": "rest",
+    "FLAG": "flag",
+    "OPTIONS": "options"
+}
+
+OptionsParameter = {}
+OptionsParameter.name = null
+OptionsParameter.required = false
+OptionsParameter.default = null
+OptionsParameter.type = PARAMETER_TYPES.OPTIONS
+OptionsParameter.options = {}
+OptionsParameter.handle = function (args, index)
+    if not(args.hasIndex(index)) and self.required then return Error.New("Missing required parameter: " + self.name)
+    if not(args.hasIndex(index)) then return [self.default, index + 1]
+    arg = args[index]
+    if self.options.hasIndex(self.name) and not(self.options.hasIndex(arg)) then return [arg, index + 1]
+    if not(self.options.hasIndex(arg)) then return Error.New("Invalid option: " + arg)
+    return [self.options[arg], index + 1]
+end function
+OptionsParameter.New = function(options)
+    param = new OptionsParameter
+    if options.hasIndex("name") then param.name = options.name
+    if not options.hasIndex("name") then return Error.New("Missing required parameter: name")
+    if options.hasIndex("required") then param.required = options.required
+    if not options.hasIndex("required") then param.required = false
+    if options.hasIndex("default") then param.default = options.default
+    if not options.hasIndex("default") then param.default = null
+    if options.hasIndex("options") then param.options = options.options
+    if not options.hasIndex("options") then return Error.New("Missing required parameter: options")
+    return param
+end function
+
+RestParameter = {}
+RestParameter.name = null
+RestParameter.required = false
+RestParameter.default = null
+RestParameter.type = PARAMETER_TYPES.REST
+RestParameter.handle = function (args, index)
+    if not(args.hasIndex(index)) and self.required then return Error.New("Missing required parameter: " + self.name)
+    if not(args.hasIndex(index)) then return [self.default, args.len()]
+    return [slice(args, index, args.len()).join(" "), args.len()]
+end function
+RestParameter.New = function(options)
+    param = new RestParameter
+    if options.hasIndex("name") then param.name = options.name
+    if not options.hasIndex("name") then return Error.New("Missing required parameter: name")
+    if options.hasIndex("required") then param.required = options.required
+    if not options.hasIndex("required") then param.required = false
+    if options.hasIndex("default") then param.default = options.default
+    if not options.hasIndex("default") then param.default = null
+    return param
+end function
+
+FlagParameter = {}
+FlagParameter.name = null
+FlagParameter.required = false
+FlagParameter.type = PARAMETER_TYPES.FLAG
+FlagParameter.flag = null
+FlagParameter.handle = function (args, index)
+    if not(args.hasIndex(index)) and self.required then return Error.New("Missing required parameter: " + self.name)
+    if not(args.hasIndex(index)) then return [false, index]
+    arg = args[index]
+    if arg == self.flag then return [true, index + 1]
+    return [false, index]
+end function
+FlagParameter.New = function(options)
+    param = new FlagParameter
+    if options.hasIndex("name") then param.name = options.name
+    if not options.hasIndex("name") then return Error.New("Missing required parameter: name")
+    if options.hasIndex("required") then param.required = options.required
+    if not options.hasIndex("required") then param.required = false
+    if options.hasIndex("flag") then param.flag = options.flag
+    if not options.hasIndex("flag") then return Error.New("Missing required parameter: flag")
+    return param
+end function
+
+Parameter = {}
+Parameter.name = null
+Parameter.required = false
+Parameter.default = null
+Parameter.type = null
+Parameter.handle = function (args, index)
+    if not(args.hasIndex(index)) and self.required then return Error.New("Missing required parameter: " + self.name)
+    if not(args.hasIndex(index)) then return [self.default, index + 1]
+    arg = args[index]
+    if self.type == PARAMETER_TYPES.STRING then return [arg, index + 1]
+    if self.type == PARAMETER_TYPES.NUMBER then
+        if typeof(to_int(arg)) == "string" then return Error.New("Invalid parameter type: " + self.type)
+        return [to_int(arg), index + 1]
+    end if
+    if self.type == PARAMETER_TYPES.BOOLEAN then 
+        if arg == "true" then return [true, index + 1]
+        if arg == "false" then return [false, index + 1]
+        return Error.New("Invalid parameter type: " + self.type)
+    end if
+    return Error.New("Invalid parameter type: " + self.type)
+end function
+Parameter.New = function(options)
+    param = new Parameter
+    if options.hasIndex("name") then param.name = options.name
+    if not options.hasIndex("name") then return Error.New("Missing required parameter: name")
+    if options.hasIndex("required") then param.required = options.required
+    if not options.hasIndex("required") then param.required = false
+    if options.hasIndex("default") then param.default = options.default
+    if not options.hasIndex("default") then param.default = null
+    if options.hasIndex("type") then param.type = options.type
+    if not options.hasIndex("type") then param.type = PARAMETER_TYPES.STRING
+    return param
+end function
+
+Command = {}
+Command.name = null
+Command.description = null
+Command.parameters = []
+Command.callback = null
+Command.permissions = {
+    "object": "file",
+    "privilege": "guest"
+}
+Command.execute = function(args, mediator)
+    parameters = self.parseArgsToParameters(args.split(" "))
+    if parameters isa Error then return parameters
+    return self.callback(parameters, mediator)
+end function
+Command.help = function()
+    help = self.name + " "
+    for param in self.parameters
+        if param.required then help = help +  "<" + param.name + "> "
+        if not(param.required) then help = help + "[" + param.name + "] "
+    end for
+    help = help + self.description
+    return help
+end function
+Command.parseArgsToParameters = function(args)
+    parameters = {}
+    handleRemoveEmpty = function(value)
+        return value != ""
+    end function
+    args = filter(args, @handleRemoveEmpty)
+    if self.parameters.len() == 0 then return parameters
+    index = 0
+    for parameter in self.parameters
+        results = parameter.handle(args, index)
+        if results isa Error then return results
+        result = results[0]
+        index = results[1]
+        parameters[parameter.name] = result
+    end for
+    return parameters
+end function
+Command.New = function(options)
+    command = new Command
+    if options.hasIndex("name") then command.name = options.name
+    if not options.hasIndex("name") then return Error.New("Missing required parameter: name")
+    if options.hasIndex("description") then command.description = options.description
+    if not options.hasIndex("description") then command.description = ""
+    if options.hasIndex("parameters") then command.parameters = options.parameters
+    if not options.hasIndex("parameters") then command.parameters = []
+    if options.hasIndex("callback") then command.callback = @options.callback
+    if not options.hasIndex("callback") then return Error.New("Missing required parameter: callback")
+    if options.hasIndex("permissions") then command.permissions = {
+        "object": "file",
+        "privilege": "guest"
+    } + options.permissions
+    if not options.hasIndex("permissions") then command.permissions = {
+        "object": "file",
+        "privilege": "guest"
+    }
+    return command
+end function

@@ -1,0 +1,48 @@
+import_code("../../libs/error.src")
+
+import_code("../../facades/computer-objects/file.src")
+import_code("../../facades/computer-objects/computer.src")
+import_code("../../facades/computer-objects/shell.src")
+import_code("../../facades/computer-objects/computer-object-factory.src")
+
+import_code("./file.src")
+import_code("./computer.src")
+import_code("./shell.src")
+
+Session = {}
+Session.handler = null
+Session.data = {
+    "ip": null
+}
+Session.New = function (handler, data)
+    if handler isa Session then return handler
+    result = new Session
+    
+    if typeof(handler) == "file" then handler = computerObjectFactory(handler)
+    if typeof(handler) == "computer" then handler = computerObjectFactory(handler)
+    if typeof(handler) == "shell" then handler = computerObjectFactory(handler)
+
+    if handler isa File then handler = FileSession.New(handler)
+    if handler isa Computer then handler = ComputerSession.New(handler)
+    if handler isa Shell then handler = ShellSession.New(handler)
+
+    if not(handler isa ShellSession) and not(handler isa ComputerSession) and not(handler isa FileSession) then return Error.New("Invalid session handler")
+
+    result.handler = handler
+    result.data = data
+
+    if handler isa ComputerSession or handler isa ShellSession then
+        result.data = {}
+        result.data.ip = handler.ip
+    else if handler isa FileSession and data.ip == null then
+        return Error.New("File session requires ip")
+    end if
+
+    if handler.user == "root" then
+        handler.goTo("/root")
+    else
+        handler.goTo("/home/" + handler.user)
+    end if
+
+    return result
+end function

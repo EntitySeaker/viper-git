@@ -1,0 +1,31 @@
+getLib = function (path)
+    return include_lib(path)
+end function
+
+loginAs = function (user, pass)
+    return get_shell(user, pass)
+end function
+
+type = params[0]
+
+if type == "login" then
+    user = params[1]
+    pass = params[2]
+    dict = params[3]
+    result = loginAs(user, pass)
+
+    if get_custom_object.hasIndex("passwords") and dict == "true" then
+        passwords = get_custom_object.passwords
+
+        for pass in passwords 
+            result = loginAs(user, pass)
+            if result != null then break
+        end for
+    end if
+
+    get_custom_object.user = result
+else if type == "getLib" then
+    path = params[1]
+    result = getLib(path)
+    get_custom_object.lib = result
+end if

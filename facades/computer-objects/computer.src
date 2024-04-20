@@ -1,0 +1,53 @@
+import_code("../../libs/error.src")
+import_code("../../libs/ssv.src")
+import_code("./file.src")
+
+Computer = {}
+Computer.computer = null
+Computer.getFile = function(path)
+    result = self.computer.File(path)
+    if result == null then return Error.New("File not found: " + path)
+    return File.New(result)
+end function
+Computer.setPassword = function(user, password)
+    result = self.computer.change_password(user, password)
+    if typeof(result) == "string" then return Error.New(result)
+end function
+Computer.processes = function()
+    return ssvToList(self.computer.show_procs())
+end function
+Computer.closeProcess = function(pid)
+    result = self.computer.close_program(to_int(pid))
+    if typeof(result) == "string" then return Error.New(result)
+end function
+Computer.createFolder = function(path, name)
+    result = self.computer.create_folder(path, name)
+    if typeof(result) == "string" then return Error.New(result)
+end function
+Computer.createFile = function(path, name)
+    result = self.computer.touch(path, name)
+    if typeof(result) == "string" then return Error.New(result)
+end function
+Computer.addUser = function(user, password)
+    result = self.computer.create_user(user, password)
+    if typeof(result) == "string" then return Error.New(result)
+end function
+Computer.deleteUser = function(user)
+    result = self.computer.delete_user(user)
+    if typeof(result) == "string" then return Error.New(result)
+end function
+Computer.name = function()
+    return self.computer.get_name()
+end function
+Computer.ip = function()
+    result = {}
+    result.local = self.computer.local_ip()
+    result.public = self.computer.public_ip()
+    return result
+end function
+Computer.New = function(computer)
+    if typeof(computer) != "computer" then return Error.New("Invalid computer object")
+    result = new self
+    result.computer = computer
+    return result
+end function

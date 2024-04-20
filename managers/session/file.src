@@ -1,0 +1,131 @@
+import_code("../../libs/error.src")
+import_code("../../utils/string.src")
+import_code("../../utils/climbFileToRoot.src")
+import_code("../../utils/getUserFromHandler.src")
+
+FileSession = {}
+FileSession.current = null
+FileSession.root = null
+FileSession.getFile = function(path)
+    startingPath = self.current
+    pathToFollow = path.split("/")
+
+    if startsWith(path, "/") then
+        startingPath = self.root
+        pathToFollow = slice(pathToFollow, 1)
+    end if
+
+    for path in pathToFollow
+        if path == ".." then
+            startingPath = startingPath.parent()
+            if startingPath isa Error then return Error.New("Cannot go above root")
+        else if path == "." or path == "" then
+            continue
+        else
+            hasChild = startingPath.hasChild(path)
+            if hasChild == false then return Error.New("File not found: " + startingPath.path + "/" + path)
+            startingPath = startingPath.child(path)
+        end if
+    end for
+
+    return startingPath
+end function
+FileSession.goTo = function(path)
+    file = self.getFile(path)
+    if file isa Error then return file
+    if file.type == FILE_TYPES.FILE then return Error.New("Cannot go to a file")
+    self.current = file
+end function
+FileSession.setPermissions = function(path, permissions, recersive = false)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return file.setPermissions(permissions, recersive)
+end function
+FileSession.setOwner = function(path, owner, recersive = false)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return file.setOwner(owner, recersive)
+end function
+FileSession.setGroup = function(path, group, recersive = false)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return file.setGroup(group, recersive)
+end function
+FileSession.permissions = function(path)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return file.permissions()
+end function
+FileSession.copy = function(path, newPath)
+    fileToCopy = self.getFile(path)
+    if fileToCopy isa Error then return fileToCopy
+    newFileLocation = self.getFile(newPath)
+    newFileName = fileToCopy.name()
+    if newFileLocation isa Error then
+        newFileName = newPath.split("/").pop()
+        newFileLocation = self.getFile(slice(newPath.split("/"), 0, newPath.split("/").len() - 1).join("/"))
+        if newFileLocation isa Error then return newFileLocation
+    end if
+    return fileToCopy.copy(newFileLocation.path(), newFileName)
+end function
+FileSession.delete = function(path)
+    fileToDelete = self.getFile(path)
+    if fileToDelete isa Error then return fileToDelete
+    if self.isParentOf(self.current.path(), fileToDelete.path()) then self.current = fileToDelete.parent()
+    if fileToDelete.path() == self.path() then self.current = self.current.parent()
+    return fileToDelete.delete()
+end function
+FileSession.move = function(path, newPath)
+    fileToMove = self.getFile(path)
+    if fileToMove isa Error then return fileToMove
+    newFileLocation = self.getFile(newPath)
+    newFileName = fileToMove.name()
+    if newFileLocation isa Error or newFileLocation.type() == FILE_TYPES.FILE then
+        newFileName = newPath.split("/").pop()
+        newFileLocation = self.getFile(slice(newPath.split("/"), 0, newPath.split("/").len() - 1).join("/"))
+        if newFileLocation isa Error then return newFileLocation
+    end if
+    return fileToMove.move(newFileLocation.path(), newFileName)
+end function
+FileSession.content = function(path)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return file.content()
+end function
+FileSession.setContent = function(path, content)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return file.setContent(content)
+end function
+FileSession.appendContent = function(path, content)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return file.appendContent(content)
+end function
+FileSession.setName = function(path, newName)
+    file = self.getFile(path)
+    if file isa Error then return file
+    return file.setName(newName)
+end function
+FileSession.path = function()
+    return self.current.path
+end function
+FileSession.isParentOf = function(path, childPath)
+    if startsWith(childPath, path) then return true
+    return false
+end function
+FileSession.type = function()
+    return "file"
+end function
+FileSession.privilege = function()
+    if self.user != "root" and self.user != "guest" then return "user"
+    return self.user
+end function
+FileSession.New = function(file)
+    result = new FileSession
+    result.root = climbFileToRoot(file)
+    result.current = file
+    result.user = getUserFromHandler(result)
+
+    return result
+end function

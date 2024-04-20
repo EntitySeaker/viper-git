@@ -1,8 +1,0 @@
-get_random_ip = function
-    while true
-        ip = floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1)
-        if not is_valid_ip(ip) then continue
-        if is_lan_ip(ip) then continue
-        return ip
-    end while
-end function

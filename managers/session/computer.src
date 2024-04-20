@@ -1,0 +1,54 @@
+import_code("./file.src")
+import_code("../../libs/error.src")
+import_code("../../facades/computer-objects/computer.src")
+import_code("../../utils/getUserFromHandler.src")
+
+ComputerSession = new FileSession
+ComputerSession.computer = null
+ComputerSession.setPassword = function (user, password)
+    return self.computer.setPassword(user, password)
+end function
+ComputerSession.processes = function ()
+    return self.computer.processes()
+end function
+ComputerSession.closeProcess = function (pid)
+    return self.computer.closeProcess(pid)
+end function
+ComputerSession.createFolder = function (path)
+    splitPath = path.split("/")
+    name = splitPath.pop()
+    parent = self.getFile(splitPath.join("/"))
+    if parent isa Error then return parent
+    return self.computer.createFolder(parent.path(), name)
+end function
+ComputerSession.createFile = function (path)
+    splitPath = path.split("/")
+    name = splitPath.pop()
+    parent = self.getFile(splitPath.join("/"))
+    if parent isa Error then return parent
+    return self.computer.createFile(parent.path(), name)
+end function
+ComputerSession.addUser = function (user, password)
+    return self.computer.addUser(user, password)
+end function
+ComputerSession.deleteUser = function (user)
+    return self.computer.deleteUser(user)
+end function
+ComputerSession.name = function ()
+    return self.computer.name()
+end function
+ComputerSession.ip = function ()
+    return self.computer.ip()
+end function
+ComputerSession.type = function ()
+    return "computer"
+end function
+ComputerSession.New = function (computer)
+    result = new ComputerSession
+    result.computer = computer
+    result.root = climbFileToRoot(computer.getFile("/"))
+    result.current = computer.getFile("/")
+    result.user = getUserFromHandler(result)
+
+    return result
+end function

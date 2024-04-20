@@ -1,0 +1,53 @@
+import_code("../../libs/functional.src")
+import_code("../../libs/error.src")
+import_code("./list-1.src")
+import_code("./list-2.src")
+import_code("./list-3.src")
+import_code("./list-4.src")
+import_code("./list-5.src")
+import_code("./list-6.src")
+
+DictionaryManager = {}
+DictionaryManager.passwords = null
+DictionaryManager.index = 0
+DictionaryManager.mediator = null
+DictionaryManager.get = function ()
+    if self.index == self.passwords.len then return Error.New("No more passwords")
+    result = self.passwords[self.index]
+    self.index = self.index + 1
+    return result
+end function
+DictionaryManager.reset = function ()
+    self.index = 0
+end function
+DictionaryManager.init = function ()
+    if DictionaryManager.passwords != null then self.passwords = DictionaryManager.passwords
+    DictionaryManager.passwords = []
+
+    passwords = []
+    passwords = passwords + list1.split("\n")
+    passwords = passwords + list2.split("\n")
+    passwords = passwords + list3.split("\n")
+    passwords = passwords + list4.split("\n")
+    passwords = passwords + list5.split("\n")
+    passwords = passwords + list6.split("\n")
+
+    allPasswords = []
+    handleLowerCase = function (password)
+        lowerPass = lower(password)
+        allPasswords.push(password)
+        allPasswords.push(lowerPass)
+    end function
+    forEach(passwords, @handleLowerCase)
+
+    DictionaryManager.passwords = allPasswords
+    self.passwords = allPasswords
+end function
+DictionaryManager.setMediator = function (mediator)
+    self.mediator = mediator
+end function
+DictionaryManager.New = function ()
+    result = new DictionaryManager
+    result.init()
+    return result
+end function

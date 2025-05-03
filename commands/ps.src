@@ -1,3 +1,70 @@
+string.color = function(hex)
+	return "<color=" + hex + ">" + self + "</color>"
+end function
+
+bar = function(n, bar_length = 35) // percentage number
+	fill_count = ceil(n / bar_length * 10)
+	empty_count = bar_length - fill_count
+	
+	fill_bar = "#"*fill_count
+	empty_bar = "-"*empty_count
+	
+	bar = fill_bar.color("#21bcff") + empty_bar.color("#032e41")
+	return bar
+end function
+//command: ps
+computer = get_shell.host_computer
+
+string.color = function(hex)
+	return "<color=" + hex + ">" + self + "</color>"
+end function
+
+bar = function(n, bar_length = 35) // percentage number
+	fill_count = ceil(n / bar_length * 10)
+	empty_count = bar_length - fill_count
+	
+	fill_bar = "#"*fill_count
+	empty_bar = "-"*empty_count
+	
+	bar = fill_bar.color("#21bcff") + empty_bar.color("#032e41")
+	return bar
+end function
+
+cpu_load = 0.0
+mem_load = 0.0
+
+// convert ps output to a list
+tasks = []
+for line in computer.show_procs.split("\n")[1:]
+	line = line.split(" ")
+	task = {}
+	cpu_load = cpu_load + line[2][:-1].val
+	mem_load = mem_load + line[3][:-1].val
+	
+	task["user"] = line[0].color("#fbfbfb")
+	if line[0] == "root" then
+		task["user"] = line[0].color("#ff4b4b")
+	end if
+	task["pid"] = line[1].color("#20ff98")
+	task["cpu"] = line[2].color("#21bcff")
+	task["mem"] = line[3].color("#21bcff")
+	task["command"] = line[4].color("#baff50")
+	
+	tasks.push task
+end for
+
+// render
+render_bar = function(bar_name, bar_load_value)
+	r = ""
+	r = r + (bar_name + ": [").color("#fbfbfb")
+	r = r + bar(bar_load_value)
+	r = r + "]==[ ".color("#fbfbfb")
+	r = r + (bar_load_value + "%").color("#21bcff")
+	r = r + " ]".color("#fbfbfb")
+	
+	return r
+end function
+
 ps = {}
 ps.name = "ps"
 ps.args = "[N/A]"
@@ -5,21 +72,45 @@ ps.desc = "Shows all running processes on a computer."
 ps.full_desc = "This command will show all running processes on a computer."
 ps.handler_types = ["start", "shell", "computer"]
 ps.run = function(object, args)
+	computer = get_shell.host_computer
+	cpu_load = 0.0
+	mem_load = 0.0
 
-    if typeof(object) == "shell" then object = object.host_computer
-    info = ""
-    procs = object.show_procs.split("\n")
-    for proc in procs
-        if proc == procs[0] then
-            info=info+do_style(proc, "title")+char(10)+do_style("---- --- --- --- -------", "text")+char(10)
-            continue
-        end if
-        info=info+do_style(proc, "text")+char(10)
-    end for
-    print(char(10)+format_columns(info)+char(10))
+	// convert ps output to a list
+	tasks = []
+	for line in computer.show_procs.split("\n")[1:]
+		line = line.split(" ")
+		task = {}
+		cpu_load = cpu_load + line[2][:-1].val
+		mem_load = mem_load + line[3][:-1].val
+	
+		task["user"] = line[0].color("#fbfbfb")
+		if line[0] == "root" then
+			task["user"] = line[0].color("#ff4b4b")
+		end if
+		task["pid"] = line[1].color("#20ff98")
+		task["cpu"] = line[2].color("#21bcff")
+		task["mem"] = line[3].color("#21bcff")
+		task["command"] = line[4].color("#baff50")
+	
+		tasks.push task
+	end for
+	
+	print render_bar("cpu_usage", cpu_load)
+	print render_bar("mem_usage", mem_load)
+	print ""
 
-end function
+	// print ps with colors
+	pps = []
+	header = task.indexes
+	for i in header.indexes	
+		header[i] = header[i].upper.color("#9d9d9d")
+	end for
+	pps.push header.join(" ")
 
-ps.show_help = function()
-    show_help(self.name, self.args, self.full_desc, self.handler_types)
+	for task in tasks
+		pps.push(task.values.join(" "))
+	end for
+
+	print(format_columns(pps.join("\n")))
 end function

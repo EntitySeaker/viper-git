@@ -1,3 +1,141 @@
+// Color's used for output....eh colors are not all that great but oh well.
+dark_gray = "<color=#A0A0A0>"   // Dark Gray for secondary text
+light_gray = "<color=#D3D3D3>"  // Light Gray for highlights
+cyan = "<color=#00FFFF>"        // Cyan for info
+light_green = "<color=#90EE90>" // Light Green for success
+yellow = "<color=#FFFF00>"      // Yellow for warnings
+soft_blue = "<color=#ADD8E6>"   // Soft Blue for links
+soft_purple = "<color=#DDA0DD>" // Soft Purple for special messages
+dark_green = "<color=#006400>"  // Dark Green for directories
+brown = "<color=#8B4513>"       // Brown for archival files
+white = "<color=#FFFFFF>"       // White for main text
+red = "<color=#FF0000>"         // Red for root
+cend = "</color>"
+        
+// Function for right padding a string to a specified width
+right_pad = function(text, width)
+    while text.len < width
+        text = text + " "
+    end while
+    return text
+end function
+        
+format_byte = function(byte)
+    if byte < 1024 then
+        output = byte + " B"
+    else if byte < 1024 * 1024 then
+        output = (byte / 1024) + " KB"
+    else if byte < 1024 * 1024 * 1024 then
+        output = (byte / 1024 / 1024) + " MB"
+    else if byte < 1024 * 1024 * 1024 * 1024 then
+        output = (byte / 1024 / 1024 / 1024) + " GB"
+    else
+        output = (byte / 1024 / 1024 / 1024 / 1024) + " TB"
+    end if
+        
+    return output
+end function
+        
+// Function to get folders in the specified path
+get_folders = function(folder)
+    folders = []
+    for subFolder in folder.get_folders
+        folders.push(subFolder)
+    end for
+    return folders
+end function
+        
+// Function to get files in the specified path
+get_files = function(folder)
+    files = []
+    for subFile in folder.get_files
+        files.push(subFile)
+    end for
+    return files
+end function
+        
+// Function to display files and folders with color coding based on owner and type
+display_contents = function(folders, files)
+    output = ""
+    divider = "-----------------------------------------------------------------"  // Divider for sections
+    max_name_length = 22  // Maximum length for names
+    max_permission = 12  // Padding for each column
+    max_owner_length = 6
+    max_group_length = 4
+    max_size_length = 4
+    col_padding = 6
+        
+    // Create header strings directly using color codes
+    header_name = "Name"
+    header_permissions = "Permissions"
+    header_owner = "Owner"
+    header_group = "Group"
+    header_size = "Size"
+        
+    // Display total folders
+    output = output + "<b>Total Folders: " + folders.len + "</b></color>\n" + divider + "\n"
+    //output = output + right_pad(header_name, max_name_length) + right_pad(header_permissions, max_permission) + right_pad(header_owner, col_padding) + right_pad(header_group, col_padding) + header_size + "\n"  // Header for folders
+        
+    // Add folders to output with color based on owner
+    for folder in folders
+        
+        file_counter = "(<color=yellow>Files: " + get_files(folder).len + "</color>) "
+        folderName = right_pad(folder.name,10) + right_pad(file_counter,15) // Include file count in folder name
+                
+        if folder.owner == "root" and folder.group == "root" then
+            owner = red + folder.owner + cend
+            group = red + folder.group + cend
+        else if folder.owner == "guest" and folder.group == "guest" then
+            owner = soft_blue + folder.owner + cend
+            roup = soft_blue + folder.group + cend
+        else
+            owner = cyan + folder.owner + cend
+            group = cyan + folder.group + cend
+        end if
+        
+        owner = right_pad(owner,6)
+        group = right_pad(group,5)
+        size = folder.size
+        perms = right_pad(folder.permissions, max_permission)
+        
+        // Adjusting padding for folder info
+        folder_info = cyan + folderName + cend + "<color=orange>" + perms + cend + owner + "  " + group + " " + format_byte(size.to_int)
+                
+        output = output + folder_info + "\n"
+    end for
+        
+    // Add header for file section
+    output = output + "\n" + "<b>Total Files: " + files.len + "</b></color>\n" + divider + "\n"
+    //output = output + right_pad(header_name, max_name_length) + right_pad(header_permissions, col_padding) + right_pad(header_owner, col_padding) + right_pad(header_group, col_padding) + header_size + "\n"  // Header for files
+        
+    // Add files to output with color based on owner and type
+    for file in files
+        
+        fileName = right_pad(file.name, max_name_length)
+        size = file.size
+        perms = right_pad(file.permissions, max_permission)
+        
+        if file.owner == "root" and file.group == "root" then
+            owner = red + file.owner + cend
+            group = red + file.group + cend
+        else if file.owner == "guest" and file.group == "guest" then
+            owner = soft_blue + file.owner + cend
+            group = soft_blue + file.group + cend
+        else
+            owner = cyan + file.owner + cend
+            group = cyan + file.group + cend
+        end if
+        
+        // Adjusting padding for file info
+        file_info = cyan + fileName + cend + "<color=orange>" + perms + cend + owner + "  " + group + " " + format_byte(size.to_int)
+                
+        output = output + file_info + "\n"
+    end for
+        
+    // Print the formatted output
+    print(output)
+end function
+        
 ls = {}
 ls.name = "ls"
 ls.args = "[PATH]"
@@ -5,9 +143,31 @@ ls.desc = "Lists files inside a directory."
 ls.full_desc = "This command will list all the files inside a directory,\n where [PATH] is the path to the directory."
 ls.handler_types = ["start", "shell", "computer", "file"]
 ls.run = function(object, args)
-
-    list_files(object, args)
-
+        
+    computer = get_shell.host_computer
+        
+        
+    if not args then
+        folderPath = current_path
+    else if args.len > 0 then
+        folderPath = args[0]
+    end if
+        
+    folder = computer.File(folderPath)
+    if folder == null then
+        print("ls: No such file or directory")
+    else
+        if not folder.has_permission("r") then
+            print("ls: permission denied")
+        else
+            // Get both folders and files
+            folders = get_folders(folder)
+            files = get_files(folder)
+        
+            // Display the contents using the display function with colors and classy output
+            display_contents(folders, files)
+        end if
+    end if
 end function
 
 ls.show_help = function()

@@ -1189,7 +1189,7 @@ ascii_print = function()
     out = out+"<pos=128px><size=7px><sprite=0 color=#fcfcfc>"
     out = out+"<pos=132px><size=7px><sprite=0 color=#ffffff>"
     out = out+"<pos=136px><size=7px><sprite=0 color=#ffffff>"
-    out = out+"<pos=140px><size=7px><sprite=0 color=#ffffff>"
+    out = out+"<pos=140px><size=7px><sprite=0 caolor=#ffffff>"
     out = out+"<pos=144px><size=7px><sprite=0 color=#3d3d3d>"
     out = out+"<pos=148px><size=7px><sprite=0 color=#0a0a0a>"
     out = out+"<voffset=-216px>"
@@ -1233,4 +1233,1405 @@ ascii_print = function()
     info = info+char(10)+do_style(typeof(main_session.cryptoLib).lower.replace("lib","")+" ", "outline")+do_style(main_session.cryptoLibPublicIP+" ", "outline")+do_style(main_session.cryptoLibLocalIP+" ", "outline")+do_style(main_session.cryptoLibVersion, "outline")
     
     print(out+ char(10) + char(10) + do_style("Version", "red", "static")+do_style(": ", "dark_grey", "static")+do_style(main_session.version, "dark_grey", "static")+char(10)+char(10)+format_columns(info)+char(10)+char(10), true)
+end function
+
+//AES128
+AES128 = function(choice, key, text) // Returns null if any error (could mean undecryptable ciphertext)
+
+	if typeof(key) != "string" then return null
+	if key.len != 16 then return null
+	if typeof(text) != "string" then return null
+	if typeof(choice) != "string" then return null
+
+	byte_key = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	for i in key.indexes
+		byte_key[i] = key[i].code
+	end for
+	key = byte_key[0:]
+
+	// Define lookup tables
+	Sbox = []
+	Sbox=Sbox+[99,124,119,123,242,107,111,197,48,1,103,43,254,215,171,118,202,130,201,125,250,89,71,240,173,212,162,175,156,164,114,192,183,253,147,38]
+	Sbox=Sbox+[54,63,247,204,52,165,229,241,113,216,49,21,4,199,35,195,24,150,5,154,7,18,128,226,235,39,178,117,9,131,44,26,27,110,90,160,82,59,214,179]
+	Sbox=Sbox+[41,227,47,132,83,209,0,237,32,252,177,91,106,203,190,57,74,76,88,207,208,239,170,251,67,77,51,133,69,249,2,127,80,60,159,168,81,163,64]
+	Sbox=Sbox+[143,146,157,56,245,188,182,218,33,16,255,243,210,205,12,19,236,95,151,68,23,196,167,126,61,100,93,25,115,96,129,79,220,34,42,144,136,70]
+	Sbox=Sbox+[238,184,20,222,94,11,219,224,50,58,10,73,6,36,92,194,211,172,98,145,149,228,121,231,200,55,109,141,213,78,169,108,86,244,234,101,122,174]
+	Sbox=Sbox+[8,186,120,37,46,28,166,180,198,232,221,116,31,75,189,139,138,112,62,181,102,72,3,246,14,97,53,87,185,134,193,29,158,225,248,152,17,105]
+	Sbox=Sbox+[217,142,148,155,30,135,233,206,85,40,223,140,161,137,13,191,230,66,104,65,153,45,15,176,84,187,22]
+
+	Rcon = [1, 2, 4, 8, 16, 32, 64, 128, 27, 54]
+
+	Mult2 = []
+	Mult2=Mult2+[0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90]
+	Mult2=Mult2+[92,94,96,98,100,102,104,106,108,110,112,114,116,118,120,122,124,126,128,130,132,134,136,138,140,142,144,146,148,150,152,154,156,158]
+	Mult2=Mult2+[160,162,164,166,168,170,172,174,176,178,180,182,184,186,188,190,192,194,196,198,200,202,204,206,208,210,212,214,216,218,220,222,224]
+	Mult2=Mult2+[226,228,230,232,234,236,238,240,242,244,246,248,250,252,254,27,25,31,29,19,17,23,21,11,9,15,13,3,1,7,5,59,57,63,61,51,49,55,53,43,41]
+	Mult2=Mult2+[47,45,35,33,39,37,91,89,95,93,83,81,87,85,75,73,79,77,67,65,71,69,123,121,127,125,115,113,119,117,107,105,111,109,99,97,103,101,155]
+	Mult2=Mult2+[153,159,157,147,145,151,149,139,137,143,141,131,129,135,133,187,185,191,189,179,177,183,181,171,169,175,173,163,161,167,165,219,217]
+	Mult2=Mult2+[223,221,211,209,215,213,203,201,207,205,195,193,199,197,251,249,255,253,243,241,247,245,235,233,239,237,227,225,231,229]
+
+
+	SubBytes = function(column)
+		column = column[0:]
+		for i in column.indexes
+			column[i] = Sbox[column[i]]
+		end for
+		return column
+	end function
+
+	WordXor = function(word1, word2)
+		result = [0, 0, 0, 0]
+		for i in result.indexes
+			result[i] = bitwise("^", word1[i], word2[i])
+		end for
+		return result
+	end function
+
+	AddRoundKey = function(state, key, roundNum)
+		roundKey = key[roundNum*4:roundNum*4+4]
+		return [WordXor(state[0], roundKey[0]), WordXor(state[1], roundKey[1]), WordXor(state[2], roundKey[2]), WordXor(state[3], roundKey[3])]
+	end function
+
+	ExpandKey = function(key)
+		W = [key[0:4], key[4:8], key[8:12], key[12:16]]
+		
+		for i in range(4, 40, 4)
+			W = W + [[], [], [], []]
+			W[i] = W[i-1][1:] + [W[i-1][0]] // RotWord
+			W[i] = SubBytes(W[i])
+			W[i] = WordXor(W[i-4], W[i])
+			W[i][0] = bitwise("^", Rcon[i/4-1], W[i][0])
+			for j in range(i+1, i+3)
+				W[j] = WordXor(W[j-4], W[j-1])
+			end for
+		end for
+		return W
+	end function
+
+	aesEncrypt = function(key, block) // Expects already formatted block
+		Mult2 = @Mult2
+		key = key[0:]
+		State = block[0:]
+		
+		// Declaring functions
+		ShiftRows = function(state)
+			state = state[0:]
+			tmp = state[0][1]
+			state[0][1] = state[1][1]
+			state[1][1] = state[2][1]
+			state[2][1] = state[3][1]
+			state[3][1] = tmp
+			
+			for i in range(1)
+				tmp = state[0][2]
+				state[0][2] = state[1][2]
+				state[1][2] = state[2][2]
+				state[2][2] = state[3][2]
+				state[3][2] = tmp
+			end for
+			
+			tmp = state[3][3]
+			state[3][3] = state[2][3]
+			state[2][3] = state[1][3]
+			state[1][3] = state[0][3]
+			state[0][3] = tmp
+			return state
+		end function
+		
+		matrix = [[2, 3, 1, 1], [1, 2, 3, 1], [1, 1, 2, 3], [3, 1, 1, 2]]
+		
+		MixColumns = function(state)
+			state = state[0:]
+			for column in state.indexes
+				endcolumn = [0, 0, 0, 0]
+				for i in matrix.indexes
+					tmp = state[column][0:]
+					for j in matrix[i].indexes
+						if matrix[i][j] == 1 then continue
+						tmp[j] = Mult2[state[column][j]]
+						if matrix[i][j] != 3 then continue
+						tmp[j] = bitwise("^", tmp[j], state[column][j])
+					end for
+					endcolumn[i] = bitwise("^", bitwise("^", bitwise("^", tmp[0], tmp[1]), tmp[2]), tmp[3])
+				end for
+				state[column] = endcolumn[0:]
+			end for
+			return state
+		end function
+		
+		// The algorithm
+		State = AddRoundKey(State, key, 0)
+		
+		for round in range(1, 9)
+			State = [SubBytes(State[0]), SubBytes(State[1]), SubBytes(State[2]), SubBytes(State[3])]
+			State = ShiftRows(State)
+			State = MixColumns(State)
+			State = AddRoundKey(State, key, round)
+		end for
+			
+		State = [SubBytes(State[0]), SubBytes(State[1]), SubBytes(State[2]), SubBytes(State[3])]
+		State = ShiftRows(State)
+		State = AddRoundKey(State, key, 10)
+		
+		return State
+	end function
+
+
+	aesDecrypt = function(key, block) // Expects already formatted block
+		Mult2 = @Mult2
+		Sbox = @Sbox
+		key = key[0:]
+		State = block[0:]
+		
+		// Declare functions
+		InvShiftRows = function(state)
+			state = state[0:]
+			tmp = state[3][1]
+			state[3][1] = state[2][1]
+			state[2][1] = state[1][1]
+			state[1][1] = state[0][1]
+			state[0][1] = tmp
+			
+			for i in range(1)
+				tmp = state[3][2]
+				state[3][2] = state[2][2]
+				state[2][2] = state[1][2]
+				state[1][2] = state[0][2]
+				state[0][2] = tmp
+			end for
+			
+			tmp = state[0][3]
+			state[0][3] = state[1][3]
+			state[1][3] = state[2][3]
+			state[2][3] = state[3][3]
+			state[3][3] = tmp
+			return state
+		end function
+		
+		InvSubBytes = function(column)
+			column = column[0:]
+			for i in column.indexes
+				column[i] = Sbox.indexOf(column[i])
+			end for
+			return column
+		end function
+		
+		matrix = [[14, 11, 13, 9], [9, 14, 11, 13], [13, 9, 14, 11], [11, 13, 9, 14]]
+		
+		InvMixColumns = function(state)
+			state = state[0:]
+			for column in state.indexes
+				endcolumn = [0, 0, 0, 0]
+				for i in matrix.indexes
+					tmp = state[column][0:]
+					for j in matrix[i].indexes
+						if matrix[i][j] == 9 then
+							tmp[j] = bitwise("^", Mult2[Mult2[Mult2[state[column][j]]]], state[column][j])
+						else if matrix[i][j] == 11 then
+							tmp[j] = bitwise("^", Mult2[bitwise("^", Mult2[Mult2[state[column][j]]], state[column][j])], state[column][j])
+						else if matrix[i][j] == 13 then
+							tmp[j] = bitwise("^", Mult2[Mult2[bitwise("^", Mult2[state[column][j]], state[column][j])]], state[column][j])
+						else
+							tmp[j] = Mult2[bitwise("^", Mult2[bitwise("^", Mult2[state[column][j]], state[column][j])], state[column][j])]
+						end if
+					end for
+					endcolumn[i] = bitwise("^", bitwise("^", bitwise("^", tmp[0], tmp[1]), tmp[2]), tmp[3])
+				end for
+				state[column] = endcolumn[0:]
+			end for
+			return state
+		end function
+		
+		// The actual algorithm
+		State = AddRoundKey(State, key, 10)
+		
+		for round in range(9, 1)
+			State = InvShiftRows(State)
+			State = [InvSubBytes(State[0]), InvSubBytes(State[1]), InvSubBytes(State[2]), InvSubBytes(State[3])]
+			State = AddRoundKey(State, key, round)
+			State = InvMixColumns(State)
+		end for
+		
+		State = InvShiftRows(State)
+		State = [InvSubBytes(State[0]), InvSubBytes(State[1]), InvSubBytes(State[2]), InvSubBytes(State[3])]
+		State = AddRoundKey(State, key, 0)
+		
+		return State
+	end function
+
+
+	// Generate IV
+	IV = []
+	for byte in key
+		IV = IV + [floor(rnd(byte)*256)] // Warning: rnd is not cryptographically secure
+	end for
+
+	key = ExpandKey(key)
+
+	b64Table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+	if choice == "encrypt" then
+		Blocks = [[]]
+		b=0
+		for char in text
+			Blocks[b] = Blocks[b] + [code(char)]
+			if Blocks[b].len == 16 then
+				Blocks = Blocks + [[]]
+				b=b+1
+			end if
+		end for
+		
+		// Pad with CMS (Crytographic Message Syntax)
+		padNum = 16 - Blocks[-1].len
+		for i in range(padNum-1)
+			Blocks[-1] = Blocks[-1] + [padNum]
+		end for
+		
+		// XOR first block with IV
+		for i in IV.indexes
+			Blocks[0][i] = bitwise("^", Blocks[0][i], IV[i])
+		end for
+		
+		// Format blocks
+		for i in Blocks.indexes
+			Blocks[i] = [Blocks[i][0:4], Blocks[i][4:8], Blocks[i][8:12], Blocks[i][12:16]]
+		end for
+		
+		// Encode blocks
+		Blocks[0] = aesEncrypt(key, Blocks[0])
+		if Blocks.len > 1 then
+			for i in range(1, Blocks.len-1)
+				for column in Blocks[i].indexes
+					for byte in Blocks[i][column].indexes
+						Blocks[i][column][byte] = bitwise("^", Blocks[i][column][byte], Blocks[i-1][column][byte])
+					end for
+				end for
+				Blocks[i] = aesEncrypt(key, Blocks[i])
+			end for
+		end if
+		
+		// Convert blocks to array of bytes
+		arr = []
+		for Block in Blocks
+			for column in Block
+				for byte in column
+					arr = arr + [byte]
+				end for
+			end for
+		end for
+		
+		// Convert array into base 64
+		output = ""
+		for i in range(0, arr.len-1, 3)
+			buffer = arr[i]*65536
+			if arr.hasIndex(i+1) then
+				buffer = buffer+arr[i+1]*256
+				if arr.hasIndex(i+2) then buffer = buffer+arr[i+2]
+			end if
+			
+			if arr.hasIndex(i+2) then
+				for j in range(3)
+					output = output + b64Table[floor(buffer/64^j)%64]
+				end for
+			else
+				if arr.hasIndex(i+1) then
+					for j in range(3,1)
+						output = output + b64Table[floor(buffer/64^j)%64]
+					end for
+				else
+					for j in range(3,2)
+						output = output + b64Table[floor(buffer/64^j)%64]
+					end for
+				end if
+			end if
+		end for
+		return output
+	end if
+
+	if choice == "decrypt" then
+		if text.len % 4 == 1 then return null
+		
+		// Convert base 64 into sextet array
+		s_arr = text.values
+		for i in s_arr.indexes
+			tmp = b64Table.indexOf(s_arr[i])
+			if tmp == null then return null
+			s_arr[i] = tmp
+		end for
+		
+		// Convert sextets to bytes
+		b_arr = []
+		for i in range(0, s_arr.len-1, 4)
+			buffer = s_arr[i]*262144
+			if s_arr.hasIndex(i+1) then
+				buffer = buffer+s_arr[i+1]*4096
+				if s_arr.hasIndex(i+2) then
+					buffer = buffer+s_arr[i+2]*64
+					if s_arr.hasIndex(i+3) then buffer = buffer+s_arr[i+3]
+				end if
+			end if
+			
+			if s_arr.hasIndex(i+3) then
+				for j in range(2)
+					b_arr = b_arr + [floor(buffer/256^j)%256]
+				end for
+			else
+				if s_arr.hasIndex(i+2) then
+					for j in range(2,1)
+						b_arr = b_arr + [floor(buffer/256^j)%256]
+					end for
+				else
+					b_arr = b_arr + [floor(buffer/65526)%256]
+				end if
+			end if
+		end for
+		
+		// Convert byte array to blocks
+		Blocks = [[]]
+		b=0
+		while b_arr.len > 0
+			if Blocks[b].len == 16 then
+				Blocks = Blocks + [[]]
+				b=b+1
+			end if
+			Blocks[b] = Blocks[b] + [b_arr.pull]
+		end while
+		if Blocks[-1].len != 16 then return null
+		
+		// Format blocks
+		for i in Blocks.indexes
+			Blocks[i] = [Blocks[i][0:4], Blocks[i][4:8], Blocks[i][8:12], Blocks[i][12:16]]
+		end for
+		
+		// Decode blocks
+		NewBlocks = Blocks[0:]
+		for i in Blocks.indexes
+			NewBlocks[i] = aesDecrypt(key, Blocks[i])
+		end for
+		
+		// XOR blocks
+		for column in Blocks[0].indexes
+			for byte in Blocks[i][column].indexes
+				NewBlocks[0][column][byte] = bitwise("^", NewBlocks[0][column][byte], IV[column*4+byte])
+			end for
+		end for
+		if Blocks.len > 1 then
+			for i in range(1, Blocks.len-1)
+				for column in Blocks[i].indexes
+					for byte in Blocks[i][column].indexes
+						NewBlocks[i][column][byte] = bitwise("^", NewBlocks[i][column][byte], Blocks[i-1][column][byte])
+					end for
+				end for
+			end for
+		end if
+		
+		Blocks = NewBlocks[0:]
+		
+		// Convert blocks to array of bytes
+		arr = []
+		for Block in Blocks
+			for column in Block
+				for byte in column
+					arr = arr + [byte]
+				end for
+			end for
+		end for
+		
+		// Remove padding
+		if arr[-1] > 16 or arr[-1] == 0 then return null
+		for i in range(arr[-1]-1)
+			arr.pop
+		end for
+		
+		// Convert array to text
+		output = ""
+		for byte in arr
+			output = output + char(byte)
+		end for
+		return output
+	end if
+
+	return null
+end function
+Escape = function(text)
+    return text.replace("(?=\\|\.|\+|\*|\?|\^|\$|\(|\)|\[|\]|\{|\}|\|)","\")
+end function
+//json Parser
+//parse(file.get_content) //will load a json text file into a map
+//toJSON(map) //will convert the map to json string
+Parser={"hex_digit_map":{},"escape_to":["\\","\""","\b","\t","\n","\f","\r"],"eol":char(13),"escape_from":["\","""",char(8),char(9),char(10),char(12),char(13)],"escape_indexes":0,"white_space":" "+char(9)+char(10)+char(13),"source":"","source_len":0,"p":0,"classID":"ParserLib   1.0.0-rc.1"}
+Parser.hex_to_int=function(s)
+	r=0
+	for c in s
+		r=r*16+self.hex_digit_map[c]
+	end for
+	return r
+end function
+Parser.escape=function(s)
+	self.escape_indexes=self.escape_from.indexes
+	for i in self.escape_indexes
+		s=s.replace(Escape(self.escape_from[i]),self.escape_to[i])
+	end for
+	return s
+end function
+Parser.unescape=function(s)
+	r=[]
+	for i in range(0,15)
+		if i<10 then
+			self.hex_digit_map[str(i)]=i
+		else
+			self.hex_digit_map[char(55+i)]=i
+			hex_digit_map[char(87+i)]=i
+		end if
+	end for
+	i=0
+	m=s.len
+	while i<m
+		d=1
+		if s[i]=="\" then
+			d=2
+			c=s[i+1]
+			if c=="b" then
+				r.push char(8)
+				i=i+d
+				continue
+			end if
+			if c=="t" then
+				r.push char(9)
+				i=i+d
+				continue
+			end if
+			if c=="n" then
+				r.push char(10)
+				i=i+d
+				continue
+			end if
+			if c=="f" then
+				r.push char(12)
+				i=i+d
+				continue
+			end if
+			if c=="r" then
+				r.push char(13)
+				i=i+d
+				continue
+			end if
+			if c=="u" then
+				h=s[i+2:i+6]
+				r.push char(self.hex_to_int(h))
+				d=6
+				i=i+d
+				continue
+			end if
+			r.push c
+		else
+			r.push s[i]
+		end if
+		i=i+d
+	end while
+	return r.join("")
+end function
+Parser.init=function(s)
+	self.source=s
+	self.source_len=s.len
+end function
+Parser.parse=function(s=null)
+	if s!=null then self.init s
+	self.p=0
+	return self.parse_element
+end function
+Parser.skip_white_space=function
+	while self.p<self.source_len
+		c = self.source[self.p]
+		if self.white_space.indexOf(c)==null then break
+		self.p=self.p+1
+	end while
+end function
+Parser.parse_element=function
+	return self.parse_value
+end function
+Parser.parse_value=function
+	self.skip_white_space
+	if not self.source.hasIndex(self.p) then return 0
+	c=self.source[self.p]
+	if c=="""" then return self.parse_string
+	if "0123456789-.".indexOf(c)!=null then return self.parse_number
+	if c=="[" then return self.parse_list
+	if c=="{" then return self.parse_map
+	if c=="t" and self.source[self.p:self.p+4]=="true" then
+		self.p=self.p+4
+		return 1
+	end if
+	if c=="f" and self.source[self.p:self.p+5]=="false" then
+		self.p=self.p+5
+		return 0
+	end if
+	if c=="n" and self.source[self.p:self.p+4]=="null" then
+		self.p=self.p+4
+		return null
+	end if
+end function
+Parser.parse_list=function
+	self.p=self.p+1
+	self.skip_white_space
+	r=[]
+	while self.p<self.source_len
+		c=self.source[self.p]
+		if c=="]" then break
+		r.push self.parse_element
+		self.skip_white_space
+		c=self.source[self.p]
+		if c=="," then
+			self.p=self.p+1
+			self.skip_white_space
+		end if
+	end while
+	self.p=self.p+1
+	return r
+end function
+Parser.parse_map=function
+	self.p=self.p+1
+	self.skip_white_space
+	r={}
+	while self.p<self.source_len
+		c=self.source[self.p]
+		if c=="}" then break
+		if c!="""" then
+			Error.er("Object member key must be a string literal"+Str.n+"Error at position "+self.p+": "+self.source[self.p-60:self.p+60],"JSON")
+			return null
+		end if
+		k=self.parse_string
+		self.skip_white_space
+		if self.source[self.p]!=":" then
+			Error.er("Colon expected"+Str.n+"Error at position "+self.p+": "+self.source[self.p-60:self.p+60])
+			return null
+		end if
+		self.p=self.p+1
+		self.skip_white_space
+		v=self.parse_element
+		r[k]=v
+		self.skip_white_space
+		c=self.source[self.p]
+		if c=="," then
+			self.p=self.p + 1
+			self.skip_white_space
+		end if
+	end while
+	self.p=self.p + 1
+	return r
+end function
+Parser.parse_string=function
+	self.p=self.p + 1
+	s=self.p
+	e=0
+	while self.p<self.source_len
+		c=self.source[self.p]
+		self.p=self.p+1
+		if c=="""" then break
+		if c=="\" then
+			e=1
+			self.p=self.p+1
+		end if
+	end while
+	r=self.source[s:self.p-1]
+	if e then r=unescape(r)
+	return r
+end function
+Parser.parse_number=function
+	s = self.p
+	while self.p < self.source_len
+		c=self.source[self.p]
+		if "0123456789+-.eE".indexOf(c)==null then break
+		self.p=self.p+1
+	end while
+	r=val(self.source[s:self.p])
+	return r
+end function
+Parser.list_to_JSON=function(l,c,d)
+	w=(self.eol+"  "*(d+1))*(not c)
+	p=["[",w]
+	f=1
+	for i in l
+		if not f then
+			p.push ","
+			p.push w
+		end if
+		p.push toJSON(i,c,d+1)
+		f=0
+	end for
+	if not c then p.push self.eol+"  "*d
+	p.push "]"
+	return join(p,"")
+end function
+Parser.map_to_JSON=function(l,c,d)
+	w=(self.eol+"  "*(d+1))*(not c)
+	p=["{",w]
+	f=1
+	for k in l
+		if not f then
+			p.push ","
+			p.push w
+		end if
+		p.push toJSON(str(k.key))
+		p.push ":"
+		if not c then p.push " "
+		p.push toJSON(@k.value,c,d+1)
+		f=0
+	end for
+	if not c then p.push self.eol+"  "*d
+	p.push "}"
+	return join(p,"")
+end function
+toJSON=function(v,c=0,i=0)
+	if @v isa funcRef then return ""+@v+""
+	if v == null then return "null"
+	if v isa number then return str(v)
+	if v isa string then return """"+Parser.escape(v)+""""
+	if v isa list then return Parser.list_to_JSON(v,c,i)
+	if v isa map then return Parser.map_to_JSON(v,c,i)
+end function
+parse=function(s)
+	p=new Parser
+	return p.parse(s)
+end function
+
+recursiveCheck = function(anyObject, maxdepth=20)
+    if maxdepth <= 0 then return false
+    if @anyObject isa map or @anyObject isa list then
+        for key in indexes(@anyObject)
+            if not recursiveCheck(@key, maxdepth-1) then return false
+        end for
+        for val in values(@anyObject)
+            if not recursiveCheck(@val, maxdepth-1) then return false
+        end for
+    end if
+    if @anyObject isa funcRef then return false
+    return true
+end function
+
+clearInterface = function(interface)
+    for k in indexes(@interface)
+        remove(@interface, @k)
+    end for
+    if not recursiveCheck(@interface) then exit("<color=red>AV detected something dangerous!.</color>")
+    return null
+end function
+
+
+verifyObject = function(object)
+    metaCheck = function(object)
+        return net_use(@object, "170.220.64.188", 0) != null
+    end function
+
+    cryptoCheck = function(object)
+        return smtp_user_list(@object, "170.220.64.188", 0) != null
+    end function
+
+    aptCheck = function(object)
+        return show(@object, "official_server") != null
+    end function
+
+    shellCheck = function(object)
+        return host_computer(@object) != null
+    end function
+
+    computerCheck = function(object)
+        return get_name(@object) != null
+    end function
+
+    fileCheck = function(object)
+        return name(@object) != null
+    end function
+
+    objects = {
+        "MetaxploitLib": {"check": @metaCheck},
+        "cryptoLib": {"check": @cryptoCheck},
+        "aptclientLib": {"check": @aptCheck},
+        "shell": {"check": @shellCheck},
+        "computer": {"check": @computerCheck},
+        "file": {"check": @fileCheck},
+    }
+
+    if @object == null then return null
+    return hasIndex(objects, typeof(@object)) and objects[typeof(@object)].check(@object)
+end function
+
+sha256_hash = function(args)
+    x = args[0]
+    BLK=[[0]]
+    i=0
+    e=0
+    while i<x.len
+        e=4
+        while e>0 and x.hasIndex(i)
+            e=e-1
+            BLK[-1][-1]=BLK[-1][-1]+code(x[i])*256^e
+            i=i+1
+        end while
+        if e==0 then
+            if BLK[-1].len==16 then BLK=BLK+[[0]] else BLK[-1]=BLK[-1]+[0]
+        end if
+    end while
+    if e>0 then
+        BLK[-1][-1]=BLK[-1][-1]+(2147483648/256^(4-e))
+    else
+        BLK[-1][-1]=2147483648
+    end if
+    if BLK[-1].len==16 then BLK=BLK+[[0]]
+    while BLK[-1].len!=15
+        BLK[-1]=BLK[-1]+[0]
+    end while
+    BLK[-1]=BLK[-1]+[x.len*8]
+    add=function(a,b)
+        return (a+b)%4294967296
+    end function
+    XOR=function(a,b)
+        return bitwise("^",floor(a/65536),floor(b/65536))*65536+bitwise("^",a%65536,b%65536)
+    end function
+    AND=function(a,b)
+        return bitwise("&",floor(a/65536),floor(b/65536))*65536+bitwise("&",a%65536,b%65536)
+    end function
+    OR = function(a,b)
+        return bitwise("|",floor(a/65536),floor(b/65536))*65536+bitwise("|",a%65536,b%65536)
+    end function
+    NOT=function(n)
+        return 4294967295-n
+    end function
+    Ch=function(x,y,z)
+        return OR(AND(x,y),AND(NOT(x),z))
+    end function
+    Maj=function(x,y,z)
+        return OR(OR(AND(x,y),AND(x,z)),AND(y,z))
+    end function
+    shr=function(n,s)
+        return floor(n/2^s)
+    end function
+    rotr=function(n,r)
+        r=2^r
+        return (n%r)*(4294967296/r)+floor(n/r)
+    end function
+    sigma0=function(n)
+        return XOR(XOR(rotr(n,7),rotr(n,18)),shr(n,3))
+    end function
+    sigma1=function(n)
+        return XOR(XOR(rotr(n,17),rotr(n,19)),shr(n,10))
+    end function
+    SIGMA0=function(n)
+        return XOR(XOR(rotr(n,2),rotr(n,13)),rotr(n,22))
+    end function
+    SIGMA1=function(n)
+        return XOR(XOR(rotr(n,6),rotr(n,11)),rotr(n,25))
+    end function
+    K=[1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221]
+    K=K+[3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580]
+    K=K+[3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986]
+    K=K+[2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895]
+    K=K+[666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037]
+    K=K+[2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344]
+    K=K+[430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779]
+    K=K+[1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298]
+    H=[1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225]
+    for BL in BLK
+        W=BL[0:]
+        for i in range(16,63)
+            W=W+[add(add(add(sigma1(W[i-2]),W[i-7]),sigma0(W[i-15])),W[i-16])]
+        end for
+        a=H[0]
+        b=H[1]
+        c=H[2]
+        d=H[3]
+        e=H[4]
+        f=H[5]
+        g=H[6]
+        h=H[7]
+        for i in range(0,63)
+            T1=add(add(add(add(SIGMA1(e),Ch(e,f,g)),h),K[i]),W[i])
+            T2=add(SIGMA0(a),Maj(a,b,c))
+            h=g
+            g=f
+            f=e
+            e=add(d,T1)
+            d=c
+            c=b
+            b=a
+            a=add(T1,T2)
+        end for
+        H[0]=add(a,H[0])
+        H[1]=add(b,H[1])
+        H[2]=add(c,H[2])
+        H[3]=add(d,H[3])
+        H[4]=add(e,H[4])
+        H[5]=add(f,H[5])
+        H[6]=add(g,H[6])
+        H[7]=add(h,H[7])
+    end for
+    HT="0123456789abcdef"
+    HZ=""
+    for i in H.indexes
+        for j in range(7)
+            HZ=HZ+HT[floor(H[i]/16^j) % 16]
+        end for
+    end for
+    print(HZ)
+end function
+
+addToBuffer = function(command, args)
+    for i in args
+        if i != "" then command = command+" "+i
+    end for
+    main_session.commandBuffer.push(command)
+    if main_session.commandBuffer.len > 100 then main_session.commandBuffer.remove(0)
+end function
+
+listBuffer = function(args)
+    max = null
+    if not args then max=10
+    if not max and args[0] == "all" then max=100
+    if not max then max = args[0].to_int
+    if max > main_session.commandBuffer.len then max = main_session.commandBuffer.len
+    print(" ")
+    for command in main_session.commandBuffer[-max:]
+        print(command)
+    end for
+    print(" ")
+end function
+
+delete_target = function(list, args)
+    for index in args
+        if index.split("-").len == 2 then
+            for object in range(index.split("-")[0].to_int, index.split("-")[1].to_int)
+                main_session[list].remove(object)
+            end for
+            continue
+        end if
+        main_session[list].remove(index.to_int)
+    end for
+    main_session[list] = sortMap(main_session[list])
+end function
+do_style = function(string = null, theme_key = null, theme = null)
+    color = null
+
+    if theme_key == "bold" then return "<b>"+string+"</b>"
+
+    if theme then
+        color = user_session[theme][theme_key]
+    else
+        color = user_session.theme[theme_key]
+    end if
+
+    return "<color="+color+">"+string+"</color>"
+end function
+
+exploit_scan = function(handlerType, args)
+    if not args then; show_help("exploitscan", commands.exploitscan.args, commands.exploitscan.full_desc, commands.exploitscan.handler_types); return; end if
+    if not main_session.MetaxploitLib then
+        print("metaxploit.so not found!")
+        return
+    end if
+
+    IP = null
+    LIB = args[0]
+    EXTRA = "."
+    if args.len >= 2 then EXTRA = args[1]
+    if is_valid_ip(args[0]) then
+        if args.len < 2 then; show_help("exploitscan", commands.exploitscan.args, commands.exploitscan.full_desc, commands.exploitscan.handler_types); return; end if
+        IP = args[0]
+        PORT = args[1].to_int
+        EXTRA = "."
+        if args.len >= 3 then
+            EXTRA = args[2]
+        end if
+    end if
+
+    if IP then
+        metalib = main_session.MetaxploitLib.net_use(IP, PORT)
+        if not metalib then; print("Could not connect to port: "+PORT); return; end if
+        metalib = metalib.dump_lib
+    else
+        metalib = main_session.MetaxploitLib.load("/lib/"+LIB)
+        if not metalib then; print("Could not load library: "+LIB); return; end if
+    end if
+
+    if main_session.vars.hasIndex("lib") and main_session.libList.hasIndex(main_session.vars.lib.to_int) and typeof(main_session.libList[main_session.vars.lib.to_int].lib) == "MetaxploitLib" then
+        memory_addresses = main_session.libList[main_session.vars.lib.to_int].lib.scan(metalib)
+    else
+        memory_addresses = main_session.MetaxploitLib.scan(metalib)
+    end if
+
+    exploits = []
+    for memory_address in memory_addresses
+        
+        values = main_session.MetaxploitLib.scan_address(metalib, memory_address).split("Unsafe check: ")
+
+        for unsec in values
+            if unsec == values[0] then continue
+            unsecValue=unsec[unsec.indexOf("<b>")+3:unsec.indexOf("</b>")]
+            print("="*20)
+            print(memory_address)	
+            print("-"*20)
+            print(unsecValue)
+            print("-"*20)
+            object = metalib.overflow(memory_address, unsecValue, EXTRA)
+            objectType = typeof(object)
+            localIP = "unknown"
+            if objectType == "shell" or objectType == "computer" or objectType == "file" then
+                if objectType == "computer" then
+                    user = userCheck(object.File("/var"))
+                    ip = object.public_ip
+                    localIP = object.local_ip
+                    output = do_style("computer: ", "green", "static")+do_style(localIP, "yellow", "static")
+                    print(output)
+                end if
+                if objectType == "shell" then
+                    user = userCheck(object.host_computer.File("/var"))
+                    ip = object.host_computer.public_ip
+                    localIP = object.host_computer.local_ip
+                    output = do_style("computer: ", "green", "static")+do_style(localIP, "yellow", "static")
+                    print(output)
+                end if
+                if objectType == "file" then
+                    user = userCheck(object)
+                    router = get_router(IP)
+                    if router and not is_lan_ip(IP) then
+                        if PORT == 0 or PORT == 8080 then
+                            localIP = router.local_ip
+                            ip = router.public_ip
+                        else
+                            for port in router.used_ports
+                                if port.port_number == PORT then
+                                    ip = IP
+                                    localIP = port.get_lan_ip
+                                    break
+                                end if
+                            end for
+                        end if
+                    else if IP then
+                        localIP = IP
+                        ip = main_session.MetaxploitLibPublicIP
+                    else
+                        localIP = main_session.MetaxploitLibLocalIP
+                        ip = main_session.MetaxploitLibPublicIP
+                    end if
+                end if
+                output = do_style("objectType type: ", "green", "static")+do_style(objectType, "yellow", "static")
+                print(output)
+            else if objectType == "null" then
+                output = do_style("objectType type: ", "green", "static")+do_style(objectType, "red", "static")
+                print(output)
+            else
+                output = do_style("objectType type: ", "green", "static")+do_style(objectType, "blue", "static")
+                print(output)
+                if objectType == "string" then
+                    print(object)
+                end if
+            end if
+
+            if objectType != "null" and objectType != "number" and objectType != "string" then
+                main_session.objectList[main_session.objectList.len] = {"IP":ip, "objectType":objectType, "object":object, "localIP":localIP, "user":user}
+            end if
+            print("="*20)
+            print()
+        end for
+    end for
+end function
+
+import_lib = function(library, path)
+
+    main_session[library] = include_lib(path)
+    
+    if not main_session[library] then
+        path = parent_path(program_path)+"/"+path.split("/")[-1]
+        main_session[library] = include_lib(path)
+    end if
+    
+    if not main_session[library] then return
+    
+    main_session[library+"PublicIP"] = main_session.pub_ip
+    main_session[library+"LocalIP"] = main_session.loc_ip
+    
+    if main_session.MetaxploitLib then
+        main_session[library+"Version"] = main_session.MetaxploitLib.load(path).version
+    else
+        main_session[library+"Version"] = "unknown"
+    end if
+
+    main_session.libList[main_session.libList.len] = {"lib":main_session[library], "publicIP":main_session[library+"PublicIP"], "localIP":main_session[library+"LocalIP"], "version":main_session[library+"Version"], "used":1}
+
+end function
+
+import_libs = function()
+
+    import_lib("MetaxploitLib", "/lib/metaxploit.so")
+    import_lib("cryptoLib", "/lib/crypto.so")
+    import_lib("aptclientLib", "/lib/aptclient.so")
+
+end function
+
+loadSettings = function(index=null)
+    configFile = get_shell.host_computer.File("/home/"+active_user+"/Config/Viper.conf")
+    if active_user() == "root" then configFile = get_shell.host_computer.File("/root/Config/Viper.conf")
+    if not configFile then return
+    settings = parse(configFile.get_content())
+    if not settings then return
+    if index != "vars" then user_session.theme = settings.theme
+    if index != "theme" then main_session.vars = settings.vars
+end function
+findFile = function(fileObject, path)
+    inputFolders = path.split("/")[:-1]
+    inputFile = path.split("/")[-1]
+    while fileObject.parent
+        fileObject = fileObject.parent
+    end while
+    if path == "/" then return fileObject
+    for inputFolder in inputFolders
+        for folder in fileObject.get_folders
+            if folder.name == inputFolder then
+                fileObject = folder
+                break
+            end if
+        end for
+    end for
+    for file in fileObject.get_folders+fileObject.get_files
+        if file.name == inputFile then return file
+    end for
+end function
+
+check_file = function(object, path)
+    if typeof(object) == "shell" then file = object.host_computer.File(path)
+    if typeof(object) == "computer" then file = object.File(path)
+    if typeof(object) == "file" then file = findFile(object, path)
+    return file
+end function
+
+in_netcat = function(shellObj, netcatList)
+    for netcatItem in netcatList
+        if netcatItem.value["IP"] == shellObj.host_computer.public_ip and netcatItem.value["localIP"] == shellObj.host_computer.local_ip and netcatItem.value["user"] == userCheck(shellObj.host_computer.File("/var")) then
+            return true
+        end if
+    end for
+    return false
+end function
+
+getNetcatConnections = function(output = true)
+    line = char(10)+do_style("Gathering connections...", "logo", "static")
+    if output == true then print(line)
+    shells = main_session.MetaxploitLib.rshell_server()
+    if typeof(shells) != "list" then; print("Error could not start listener!"); return "stop"; end if
+    line = do_style(shells.len+" shell(s) connected!"+char(10), "arg")
+    if output == true then print(line)
+    for shellObj in shells
+        if not in_netcat(shellObj, main_session.netcatList) then
+            main_session.netcatList[main_session.netcatList.len] = {"IP":shellObj.host_computer.public_ip, "object":shellObj, "objectType":typeof(shellObj), "localIP":shellObj.host_computer.local_ip, "user":userCheck(shellObj.host_computer.File("/var"))}
+        end if
+    end for
+end function
+
+check_router = function(ip, version)
+    router = get_router(ip)
+    if not router then router = get_switch(ip)
+    if not router then return null
+    if router.kernel_version == version then return true
+    print(do_style("kernel_router"+" "+router.kernel_version, "red", "static"))
+    return null
+end function
+
+check_service = function(router, service, version)
+    ports = router.used_ports
+    if not ports then return null
+    for port in ports
+        libInfo = router.port_info(port)
+        if libInfo == service+" "+version then return true
+        print(do_style(libInfo, "red", "static"))
+    end for
+    return null
+end function
+
+ipscan = function(ip, routers)
+    router = get_router(ip)
+    for localIP in router.devices_lan_ip
+        if routers.indexOf(localIP) != null then continue
+        line = do_style(localIP, "text").replace("\.",do_style(".", "title"))
+        print(line)
+        routers.push(router.local_ip)
+        if get_router(localIP) then ipscan(localIP, routers)
+    end for
+end function
+
+addDefaultVars = function()
+    if active_user != "root" then main_session.vars[active_user] = "/home/"+active_user
+    main_session.vars["guest"] = "/home/guest"
+    main_session.vars["downloads"] = "/Public/htdocs/downloads"
+    main_session.vars["website"] = "www.viper.com"
+    main_session.vars["viper-ip"] = "170.220.64.188"
+    main_session.vars["es"] = "exploitscan"
+end function
+
+update_check = function(ip)
+    if not main_session.aptclientLib then
+        aptline = do_style("aptclient.so not found! Update check failed.", "red", "static")
+        print(aptline)
+        return
+    end if
+
+    print("Updating package lists...")
+	main_session.aptclientLib.update
+
+    if program_path == "/bin/viper" then
+        pendingPackages = main_session.aptclientLib.check_upgrade("/bin/viper")
+    else if program_path == "/bin/viper-dev" then
+        pendingPackages = main_session.aptclientLib.check_upgrade("/bin/viper-dev")
+        main_session.version = main_session.version+do_style(" <u>UNSTABLE!</u>", "red", "static")
+    else
+        binline = do_style("Viper not in /bin! Update check failed.", "red", "static")
+        print(binline)
+        return
+    end if
+
+	if pendingPackages == 1 then main_session.version = main_session.version+do_style(" <u>OUTDATED!</u>", "red", "static")
+end function
+
+add_session = function(obj_map)
+    main_session.sessionList.push(obj_map)
+    if main_session.sessionList.len > 100 then main_session.sessionList.remove(0)
+end function
+
+nmap_scan = function(args)
+    if not args or args[0] == "" then; commands.nmap.show_help; return; end if
+    IP = args[0]
+    if IP == "random" then IP = get_random_ip
+    if IP.split("\.").len == 3 then IP = nslookup(IP)
+    isLanIp = is_lan_ip(IP)
+    router = get_router(IP)
+    if isLanIp and not router then router = get_router
+
+    if not router or router.device_ports(IP) == "device_ports: "+IP+" is unreachable" then
+        print("nmap: ip address not found")
+        return
+    end if
+
+    if not isLanIp then
+        ports = router.used_ports
+    else
+        ports = router.device_ports(IP)
+    end if
+
+    KERNEL = do_style(router.local_ip+" ", "text")+do_style(0+" ", "text")+do_style("TRUE ", "green", "static")+do_style("OPEN ", "green", "static")+do_style("kernel_router "+router.kernel_version, "text")
+    if router.kernel_version == null then KERNEL = do_style(router.local_ip+" ", "text")+do_style(0+" ", "text")+do_style("TRUE ", "green", "static")+do_style("OPEN ", "green", "static")+do_style("unknown unknown", "text")
+
+    portlist = []
+    for port in ports
+        portlist.push(port.get_lan_ip+" "+port.port_number+" "+router.port_info(port))
+    end for
+
+    iplist = [KERNEL]
+    if not isLanIp then
+        for ip in router.devices_lan_ip
+            for port in router.device_ports(ip)
+                portStatus = do_style("OPEN ", "green", "static")
+                if port.is_closed then
+                    portStatus = do_style("CLOSED ", "red", "static")
+                end if
+                forwarded = do_style("FALSE ", "red", "static")
+                if portlist.indexOf(port.get_lan_ip+" "+port.port_number+" "+router.port_info(port)) != null then
+                    forwarded = do_style("TRUE ", "green", "static")
+                end if
+                index = do_style(port.get_lan_ip+" ", "text")+do_style(port.port_number+" ", "text")+forwarded+portStatus+do_style(router.port_info(port), "text")
+                if iplist.indexOf(index) == null then
+                    iplist.push(index)
+                end if
+            end for
+        end for
+    else
+        if IP != router.local_ip then iplist = []
+        for port in ports
+            iplist.push(do_style(port.get_lan_ip+" ", "text")+do_style(port.port_number+" ", "text")+do_style("TRUE ", "green", "static")+do_style("OPEN ", "green", "static")+do_style(router.port_info(port), "text"))
+        end for
+    end if
+    iplist = iplist.sort("TRUE")
+    INFO = do_style("HOST ", "title")+do_style("PORT ", "title")+do_style("FORWARDED ", "title")+do_style("STATE ", "title")+do_style("SERVICE VERSION", "title")+char(10)+do_style("---- ", "text")+do_style("---- ", "text")+do_style("--------- ", "text")+do_style("----- ", "text")+do_style("------- -------", "text")
+    
+    if iplist.len == 0 then
+        print("Scan finished. No open ports.")
+        return
+    end if
+
+    for i in iplist
+        INFO = INFO+char(10)+i
+    end for
+    print(" ")
+    print(do_style("IP", "title")+do_style(": "+IP, "text"))
+    print(do_style("ESSID", "title")+do_style(": "+router.essid_name, "text"))
+    print(do_style("BSSID", "title")+do_style(": "+router.bssid_name, "text"))
+    print(char(10)+format_columns(INFO)+char(10))
+end function
+get_random_ip = function
+    while true
+        ip = floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1)
+        if not is_valid_ip(ip) then continue
+        if is_lan_ip(ip) then continue
+        return ip
+    end while
+end function
+routerCheck = function(fileObject)
+    while fileObject.parent
+        fileObject = fileObject.parent
+    end while
+    for folder in fileObject.get_folders
+        if folder.name == "lib" then
+            libFolder = folder
+            break
+        end if
+    end for
+    for library in libFolder.get_files
+        if library.name == "kernel_router.so" then
+            return true
+        end if
+    end for
+    return false
+end function
+show_help = function(name, args, full_desc, handler_types)
+    bac_args = args
+    bac_desc = full_desc
+    handlers = ""
+    for arg in args.split(" ")
+        args = args.replace(Escape(arg), do_style(arg, "arg"))+" "
+        full_desc = full_desc.replace(Escape(arg), do_style(arg, "arg"))+" "
+        full_desc = full_desc.replace(Escape("[true]"), do_style("[true]", "bool"))+" "
+        full_desc = full_desc.replace(Escape("[false]"), do_style("[false]", "bool"))+" "
+    end for
+    for handler_type in handler_types
+        handlers = handlers+do_style(handler_type, "arg")+", "
+    end for
+    handlers = handlers[:-2]
+    print("\n"+do_style(name, "arg")+" "+args+"\n")
+    print(full_desc+"\n")
+    print("This command can be used in the following handlers: "+handlers+"."+char(10))
+    args = bac_args
+    full_desc = bac_desc
+end function
+show_targets = function()
+    info = do_style("INDEX ", "title")+do_style("USER ", "title")+do_style("PUBLICIP ", "title")+do_style("LANIP ", "title")+do_style("OBJECT", "title")+char(10)+do_style("----- ", "text")+do_style("---- ", "text")+do_style("-------- ", "text")+do_style("----- ", "text")+do_style("------", "text")
+    for object in main_session.objectList
+        USER = do_style(object["value"]["user"]+" ", "text")
+        if object["value"]["user"] == "root" then USER = do_style("root ", "red", "static")
+        info = info+"\n"+do_style(object["key"]+" ", "text")+USER+do_style(object["value"]["IP"]+" ", "title")+do_style(object["value"]["localIP"]+" ", "text")+do_style(object["value"]["objectType"], "green", "static")
+    end for
+    print("\n"+format_columns(info)+"\n")
+end function
+sortMap = function(map)
+    new_map = {}
+    for i in map
+        new_map[new_map.len] = i.value
+    end for
+    return new_map
+end function
+get_ssh = function(object, ip, port, user, pass)
+    if typeof(port) != "number" then return false
+    shell = object.connect_service(ip, port, user, pass)
+    if typeof(shell) != "shell" then return false
+    return shell
+end function
+
+TTY = function(object, handlerType, pub_ip, loc_ip, user_clean)
+    user = user_clean
+    if user == "root" then
+        user = do_style(user, "red", "static")
+        hst = do_style("@", "outline")+do_style("viper", "red", "static")
+        uic = "# "
+    else
+        user = do_style(user, "outline")
+        hst = do_style("@viper", "outline")
+        uic = "$ "
+    end if
+
+    fpub_ip = do_style(pub_ip, "title")
+    if handlerType == "start" then fpub_ip = do_style(pub_ip, "start_color")
+
+    tty = do_style("(", "outline")+user+hst+do_style(")——[", "outline")+fpub_ip+do_style("]——["+loc_ip+"]——[", "outline")+do_style(handlerType.upper, "handler_color")+do_style("]", "outline")
+    tty_clean = "("+user_clean+"@viper"+")——["+pub_ip+"]——["+loc_ip+"]——["+handlerType+"]"
+    spacing = 2.1
+    spacing = spacing+(tty_clean.len)*0.6
+    tty = do_style("———", "outline")+tty+do_style("<voffset=-0.5em><space=-"+spacing+"em>|<voffset=-1em><space=-0.6em>|<voffset=-1.5em><space=-0.3em>——", "outline")+do_style(uic, "title")
+    return tty
+end function
+userCheck = function(fileObject) //check perm for npc machine
+    if not fileObject then; return "*guest"; end if
+    while fileObject.parent
+        fileObject = fileObject.parent
+    end while
+    homeFolder = null
+    for folder in fileObject.get_folders
+        if folder.name == "root" then
+            if folder.has_permission("w") and folder.has_permission("r") and folder.has_permission("x") then return "root"
+        end if
+        if folder.name == "home" then
+            homeFolder = folder
+        end if
+    end for
+    if not homeFolder then return "guest"
+    for folder in homeFolder.get_folders
+        if folder.name == "guest" then continue
+        if folder.chmod("u+rwx") == "" then
+            if folder.owner == folder.group then return folder.owner
+            return "*"+folder.group
+        end if
+    end for
+    return "guest"
+end function
+list_files = function(object, args)
+    if not args then; show_help("ls", commands.ls.args, commands.ls.full_desc, commands.ls.handler_types); return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    path = args[0]
+    folder = findFile(object, path)
+    output = "\n" + do_style("permissions", "red", "static")+" "+do_style("user", "red", "static")+" "+do_style("group", "red", "static")+" "+do_style("name", "red", "static") + "\n"+do_style("-----------", "text")+" "+do_style("----", "text")+" "+do_style("-----", "text")+" "+do_style("----", "text") + "\n"
+    if folder == null then; print("Does not exist!"); return; end if
+    for subFile in folder.get_folders + folder.get_files
+        nameFile = subFile.name
+		permission = subFile.permissions
+		owner = subFile.owner
+		size = subFile.size
+		group = subFile.group
+        nameFile = do_style(nameFile, "text")
+        if subFile.has_permission("r") and subFile.has_permission("w") and subFile.has_permission("x") then
+            permission = do_style(permission, "green", "static")
+            owner = do_style(owner, "green", "static")
+            group = do_style(group, "green", "static")
+        else if subFile.has_permission("r") or subFile.has_permission("w") or subFile.has_permission("x") then
+            permission = do_style(permission, "yellow", "static")
+            owner = do_style(owner, "yellow", "static")
+            group = do_style(group, "yellow", "static")
+        else
+            permission = do_style(permission, "red", "static")
+            owner = do_style(owner, "red", "static")
+            group = do_style(group, "red", "static")
+        end if
+        if subFile.is_folder then nameFile = do_style(subFile.name, "light_blue", "static")
+        output = output+permission+" "+owner+" "+group+" "+nameFile+"\n"
+    end for
+    print(format_columns(output)+"\n")
+end function
+read_file = function(object, args)
+    if not args then; show_help("cat", commands.cat.args, commands.cat.full_desc, commands.cat.handler_types); return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+
+    pathFile = args[0]
+    file = findFile(object, pathFile)
+
+    if file == null then; print("File not found!"); return; end if
+
+    if file.is_binary then
+        print("cat: can't open " + file.path + ". Binary file")
+        return
+    else if not file.has_permission("r") then
+        print("cat: permission denied")
+        return
+    end if
+
+    info = ""
+    for line in file.get_content.split(char(10))
+        info = info+"\n"+line
+    end for
+    print(info+"\n")
 end function

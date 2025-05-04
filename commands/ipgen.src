@@ -1,0 +1,294 @@
+<<<<<<< Updated upstream
+// Color constants for better output
+=======
+/ Color constants for better output
+>>>>>>> Stashed changes
+    COLOR_DEFAULT = "#009900"
+    COLOR_ERROR = "#FF0000"
+    COLOR_INFO = "#33CCFF"
+    COLOR_WARNING = "#FFA500"
+    COLOR_SUCCESS = "#00FF00"
+        
+    // Utility function to print colored messages
+    printMsg = function(msg, color=COLOR_DEFAULT)
+        print("<color=" + color + ">" + msg + "</color>")
+    end function
+        
+    // Function to write results to a file
+    writeToFile = function(fileName, data)
+        print typeof(data)
+        print(data)
+        computer = get_shell.host_computer
+        computer.create_folder("/home/" + active_user, "ipscan")
+        touch(computer, "/home/" +active_user+ "/ipscan/", fileName)
+        file = computer.File("/home/" +active_user+ "/ipscan/" + fileName)
+        file.set_content("Scan results:\n" + data) 
+    end function
+    
+    getRandomIp = function
+        while true
+            ip = floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1)
+            if not is_valid_ip(ip) then continue
+            if is_lan_ip(ip) then continue
+            return ip
+        end while
+    end function
+        
+    scanLibrary = function(lib, ver, ipCountLimit)
+        ipCount = 0      // Number of successful matches found
+        scannedIps = 0   // Total number of IPs scanned
+        matches = []     // Store valid results
+    
+        // Compose scan message
+        scanMessage = "Scanning for " + lib
+        if ver then
+            scanMessage = scanMessage + " v" + ver
+        else
+            scanMessage = scanMessage + " (any version)"
+        end if
+        printMsg(scanMessage, COLOR_SUCCESS)
+    
+        // Main loop: continue until the desired number of matches are found
+        while ipCount < ipCountLimit
+            wait(0.05)
+            ip = getRandomIp()
+            scannedIps = scannedIps + 1
+            printMsg("Scanning IP " + scannedIps + ": " + ip, COLOR_INFO)
+    
+            if is_lan_ip(ip) then 
+                continue
+            end if
+    
+            router = get_router(ip)
+            if not router then 
+                continue
+            end if
+    
+            foundMatch = false  // Reset for each IP
+    
+            if lib == "router" then
+                kernelVer = router.kernel_version
+                if not ver or kernelVer == ver then
+                    matches.push(ip + " router kernel " + kernelVer)
+                    foundMatch = true
+                    printMsg("Added match: " + ip + " router kernel " + kernelVer, COLOR_SUCCESS)  // Debug print
+                end if
+            else
+                ports = router.used_ports
+                for port in ports
+                    info = splitString(router.port_info(port), " ")
+                    if info.len < 2 then 
+                        continue
+                    end if
+                    portLib = info[0]
+                    portVer = info[-1]
+                    if portLib == lib then
+                        if not ver or portVer == ver then
+                            matches.push(ip + ":" + port.port_number + " " + portLib + " " + portVer)
+                            foundMatch = true
+                            printMsg("Added match: " + ip + ":" + port.port_number + " " + portLib + " " + portVer, COLOR_SUCCESS)  // Debug print
+                        end if
+                    end if
+                end for
+            end if
+    
+            // Increment the match count only if we found a match for this IP
+            if foundMatch then
+                ipCount = ipCount + 1
+            end if
+        end while
+    
+        printMsg("Scanned " + scannedIps + " IPs, found " + ipCount + " matches", COLOR_WARNING)
+    
+        // Debugging: Print matches before writing to file
+        if matches.len == 0 then
+            printMsg("No valid IPs found.", COLOR_ERROR)
+        else
+            printMsg("Matches Found:", COLOR_INFO)
+            for match in matches
+                printMsg(match, COLOR_SUCCESS)
+            end for
+    
+            // Write results to the file
+            outputText = "Scan Results:\n" + matches.join("\n")
+            writeToFile("scan_results.txt", outputText)
+            printMsg("Results saved to scan_results.txt", COLOR_SUCCESS)
+        end if
+    
+        rescan(lib, ver, ipCountLimit)
+    end function
+        
+    // Display menu and get user choice
+    menu = function()
+        clear_screen
+        printMsg("[Available Libraries]", COLOR_INFO)
+        options = ["1: ssh", "2: repository", "3: chat", "4: http", "5: ftp", "6: rshell", "7: router"]
+        for opt in options
+            printMsg(opt, COLOR_DEFAULT)
+        end for
+        return user_input("Enter number (1-7): ")
+    end function
+        
+    // Handle rescan options
+    rescan = function(lib, ver, ipCountLimit)
+        printMsg("\nScan complete!", COLOR_SUCCESS)
+        printMsg("Options:", COLOR_INFO)
+        printMsg("1: Rescan same library", COLOR_DEFAULT)
+        printMsg("2: Return to menu", COLOR_DEFAULT)
+        printMsg("3: Exit", COLOR_DEFAULT)
+        
+        choice = user_input("Choice (1-3): ")
+        if choice == "1" then
+            scanLibrary(lib, ver, ipCountLimit)
+        else if choice == "2" then
+            ipgen_main()
+        else if choice == "3" then
+            exit("Exiting...")
+        else
+            printMsg("Invalid choice, returning to menu", COLOR_ERROR)
+            ipgen_main()
+        end if
+    end function
+    
+    // Custom function to split a string by a delimiter in GreyScript (without indexOf)
+    splitString = function(str, delimiter)
+        result = []
+    
+        while true
+            index = null
+    
+            // Manually search for the first occurrence of the delimiter
+            i = 0
+            while i < str
+                if str[i] == delimiter then
+                    index = i
+                    break
+                end if
+                i = i + 1
+            end while
+    
+            if index == null then  // No delimiter found, store remaining string
+                result.push(str)
+                break
+            end if
+    
+            // Extract substring before delimiter and add to result list
+            result.push(str.sub(0, index))
+    
+            // Remove extracted portion, advancing past delimiter
+            str = str.sub(index + 1)  // Removed `.len`
+        end while
+    
+        return result
+    end function
+    
+    // Main function with optional parameters
+    ipgen_main = function(ipCountLimit=null, lib=null, ver=null)
+        if not ipCountLimit then
+            rawInput = user_input("Number of IPs to find? > ")
+            ipCountLimit = rawInput.to_int
+            print ipCountLimit
+            if not typeof(ipCountLimit) == "number" then
+                printMsg("Invalid input. Please enter a numeric value.", COLOR_ERROR)
+                return
+            end if
+<<<<<<< Updated upstream
+            
+=======
+           
+>>>>>>> Stashed changes
+            if not (ipCountLimit > 0) then
+                printMsg("Please enter a positive number", COLOR_ERROR)
+                return
+            end if
+        end if
+    
+        if not lib then
+            choice = menu()
+            libMap = {
+                "1": "ssh",
+                "2": "repository",
+                "3": "chat",
+                "4": "http",
+                "5": "ftp",
+                "6": "rshell",
+                "7": "router",
+            }
+            lib = libMap[choice]
+            if not lib then
+                exit("Invalid choice. Usage: [lib] (version)")
+            end if
+        end if
+    
+        if not ver and not (lib == "rshell") then  // Fixed: replaced `!=` with `not (value == otherValue)`
+            verInput = user_input("Enter version (press Enter for any): ")
+            if not (verInput == "") then ver = verInput
+        end if
+    
+        scanLibrary(lib, ver, ipCountLimit)
+    end function
+    
+    // Define the command object for running the script
+    ipgen = {}
+    ipgen.name = "ipgen"
+    ipgen.args = "[IP_COUNT] (LIBRARY) (VERSION)"
+    ipgen.desc = "Scans for services and generates valid IP addresses."
+    ipgen.full_desc = "This command scans a specified number of IPs and searches for a given library/service.\n" + 
+<<<<<<< Updated upstream
+                        "Where [IP_COUNT] is the number of IPs to scan,\n" + 
+                        "where (LIBRARY) is the optional service to scan for,\n" + 
+                        "where (VERSION) is the optional version of the service."
+=======
+                      "Where [IP_COUNT] is the number of IPs to scan,\n" + 
+                      "where (LIBRARY) is the optional service to scan for,\n" + 
+                      "where (VERSION) is the optional version of the service."
+>>>>>>> Stashed changes
+    
+    ipgen.handler_types = ["start", "shell"]
+    ipgen.run = function(object, args)
+        argsList = splitString(args, " ")
+        ipCountLimit = null
+        lib = null
+        ver = null
+    
+        if argsList.len > 0 then
+            rawInput = argsList[0]
+    
+            // Ensure input is purely numeric before conversion
+            valid = true
+            i = 0
+            while i < rawInput
+                char = rawInput[i]
+                if not ("0" <= char and char <= "9") then
+                    valid = false
+                    break
+                end if
+                i = i + 1
+            end while
+    
+            if valid then
+                ipCountLimit = rawInput * 1  // Convert to number
+            else
+                printMsg("Invalid IP count. Please enter a numeric value.", COLOR_ERROR)
+                return
+            end if
+        end if
+    
+        if argsList.len > 1 then
+            lib = argsList[1]
+        end if
+    
+        if argsList.len > 2 then
+            ver = argsList[2]
+        end if
+    
+        ipgen_main(ipCountLimit, lib, ver)
+    end function
+<<<<<<< Updated upstream
+        
+=======
+    
+>>>>>>> Stashed changes
+    ipgen.show_help = function()
+        show_help(self.name, self.args, self.full_desc, self.handler_types)
+    end function

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream:viper.src
 addgroup = {}
 addgroup.name = "addgroup"
 addgroup.args = "[USER] [GROUP]"
@@ -3303,3 +3304,3310 @@ while not main_session.exit
 
 end while
 
+=======
+addgroup = {}
+addgroup.name = "addgroup"
+addgroup.args = "[USER] [GROUP]"
+addgroup.desc = "Adds a user to a group."
+addgroup.full_desc = "This command will add a user to a group where [USER] is the user and [GROUP] the group."
+addgroup.handler_types = ["start", "shell", "computer"]
+addgroup.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: groupadd
+
+    user = args[0]
+    group = args[1]
+
+    output = object.create_group(user, group)
+    if output == true then; print("Group " + group + " added to user " + user); return; end if
+    if output then; print(output); return; end if
+    print("Error: the group could not be created.")
+
+end function
+
+addgroup.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+addobject = {}
+addobject.name = "addobject"
+addobject.args = "[N/A]"
+addobject.desc = "Adds the current session to targets."
+addobject.full_desc = "This command will add the current session to the target list."
+addobject.handler_types = ["start", "shell", "computer", "file"]
+addobject.run = function(object, args)
+
+    main_session.objectList[main_session.objectList.len] = {"IP":main_session.pub_ip, "objectType":typeof(object), "object":object, "localIP":main_session.loc_ip, "user":main_session.current_user}
+
+end function
+
+addobject.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+adduser = {}
+adduser.name = "adduser"
+adduser.args = "[USER] [PASS]"
+adduser.desc = "Adds a user to the computer."
+adduser.full_desc = "This command will add a user to the computer where [USER] is the user,\n and [PASSWORD] is the password for the user."
+adduser.handler_types = ["start", "shell", "computer"]
+adduser.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: useradd
+
+    inputMsg = "Creating new user " + args[0]
+    inputPass = args[1]
+
+    print(inputMsg)
+
+    output = object.create_user(args[0], inputPass)
+    if output == true then; print("User created OK"); return; end if
+    if output then; print(output); return; end if
+    print("Error: the user could not be created.")
+
+end function
+
+adduser.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+addvar = {}
+addvar.name = "addvar"
+addvar.args = "[KEY] [VAL]"
+addvar.desc = "Adds a variable to the list of variables."
+addvar.full_desc = "This command will add a variable to the list of variabels where [KEY] is the name of the variable,\n and [VAL] is the value of the variable."
+addvar.handler_types = ["start", "shell", "computer", "file"]
+addvar.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    arguments = ""
+    for argument in args[1:]
+        arguments = arguments+argument+" "
+    end for
+    main_session.vars[args[0]] = arguments.trim()
+
+end function
+
+addvar.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+crack_cap = {}
+crack_cap.name = "aircrack"
+crack_cap.args = "[PATH]"
+crack_cap.desc = "Cracks a file.cap file."
+crack_cap.full_desc = "This command will crack a file.cap file where [PATH] is the path to the file."
+crack_cap.handler_types = ["start", "shell", "computer", "file"]
+crack_cap.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    path = args[0]
+    if not main_session.cryptoLib then; print("Error: Missing crypto library"); return; end if
+    print(main_session.cryptoLib.aircrack(path))
+
+end function
+
+crack_cap.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+airkick = {}
+airkick.name = "aireplay"
+airkick.args = "[BSSID] [ESSID] [PWR]"
+airkick.desc = "Generates a file.cap file."
+airkick.full_desc = "This command will generate a file.cap file, where [BSSID] is the bssid of the network,\n where [ESSID] is the essid of the network,\n where [PWR] is the power of the network."
+airkick.handler_types = ["start", "shell", "computer", "file"]
+airkick.run = function(object, args)
+
+    if not args or args.len < 3 then; self.show_help; return; end if
+    //command: aireplay
+    if not main_session.cryptoLib then; print("Error: Missing crypto library"); return; end if
+
+    bssid = args[0]
+    essid = args[1]
+    pwr = args[2].to_int
+    
+    if typeof(pwr) != "number" then
+        pwr = args[2].split("%")[0].to_int
+        if typeof(pwr) != "number" then
+            print("Invalid pwr.")
+            return
+        end if
+    end if
+    
+    result = main_session.cryptoLib.aireplay(bssid, essid, 300000/pwr)
+    if typeof(result) == "string" then print(result)
+
+end function
+
+airkick.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+airmonitor = {}
+airmonitor.name = "airmon"
+airmonitor.args = "[START/STOP] [NETDEVICE]"
+airmonitor.desc = "Puts network card into monitor mode."
+airmonitor.full_desc = "This command will put a network card into monitor mode,\n where [START/STOP] is whether to start or stop monitor mode,\n where [NETDEVICE] is the network card,\n provide no arguments to list available network cards."
+airmonitor.handler_types = ["start", "shell", "computer", "file"]
+airmonitor.run = function(object, args)
+
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: airmon
+    if not args then
+        print(char(10)+object.network_devices())
+        return
+    end if
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if not main_session.cryptoLib then; print("Error: Missing crypto library"); return; end if
+
+    formatOutput = "Interface Chipset Monitor_Mode\n"
+    if args.len == 0 then; print(format_columns(formatOutput + object.network_devices)); return; end if
+    option = args[0]
+    device = args[1]
+    if option != "start" and option != "stop" then; self.show_help; return; end if
+
+    output = main_session.cryptoLib.airmon(option, device)
+    if not output then; print("airmon: " + device + " not found"); return; end if
+    if typeof(output) == "string" then; print(output); return; end if
+    print(format_columns(formatOutput + object.network_devices))
+
+end function
+
+airmonitor.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+aptget = {}
+aptget.name = "apt-get"
+aptget.args = "[N/A]"
+aptget.desc = "Apt client."
+aptget.full_desc = "This command will start the apt-get client."
+aptget.handler_types = ["start", "shell", "computer", "file"]
+aptget.run = function(object, args)
+
+    //command: apt-get
+    if not main_session.aptclientLib then
+        print("aptclient.so not found!")
+        return
+    end if
+
+    PendingUpdating = function(folderPath)
+        pendingUpdate = []
+        targetFolder = object.host_computer.File(folderPath)
+        if targetFolder != null then
+            files = targetFolder.get_files
+            for itemFile in files
+                output = main_session.aptclientLib.check_upgrade(itemFile.path)
+                if output == true then
+                    pendingUpdate.push(itemFile.name)
+                end if
+            end for
+        end if
+        return pendingUpdate
+    end function 
+
+    if not args or args.len == 0 or args.len > 3 then; print(command_info("apt-get_usage")); return; end if
+    action = args[0]
+    if action == "update" then
+        print("Updating package lists...")
+        output = main_session.aptclientLib.update
+        if output then print(output)
+        
+    else if action == "install" then
+        print("Reading package lists...")
+        if args.len != 2 then; print(command_info("apt-get_usage")); return; end if
+        print("Downloading " + args[1])
+        output = main_session.aptclientLib.install(args[1])
+        if output == true then; print(args[1] + " installed"); return; end if
+        print(output)
+        
+    else if action == "search" then
+        if args.len != 2 then; print(command_info("apt-get_usage")); return; end if
+        print(main_session.aptclientLib.search(args[1]))
+        
+    else if action == "show" then
+        if args.len != 2 then; print(command_info("apt-get_usage")); return; end if
+        print(main_session.aptclientLib.show(args[1]))
+        
+    else if action == "addrepo" then
+        if args.len < 2 or args.len > 3 then; print(command_info("apt-get_usage")); return; end if
+        port = 1542
+        if args.len == 3 then port = args[2]
+        output = main_session.aptclientLib.add_repo(args[1])
+        if output then; print(output); return; end if
+        print("Repository " + args[1] + " added succesfully.\nLaunch apt with the update option to apply the changes")
+        
+    else if action == "delrepo" then
+        if args.len != 2 then; print(command_info("apt-get_usage")); return; end if
+        output = main_session.aptclientLib.del_repo(args[1])
+        if output then; print(output); return; end if
+        print("Repository " + args[1] + " removed succesfully.\nLaunch apt with the update option to apply the changes")
+        
+    else if action == "upgrade" then
+        print("Reading package lists...")
+        //upgrade all packages
+        if args.len == 1 then
+            pendingPackages = PendingUpdating("/lib") + PendingUpdating("/bin")
+            if pendingPackages.len == 0 then; print("No updates needed"); return; end if
+            print("The following packages will be updated:")
+            pkgs = ""
+            for itemPackage in pendingPackages
+                pkgs = pkgs + " " + itemPackage
+            end for
+            print(pkgs)
+            option = user_input("\nDo you want to continue?(y/n): ")
+            if option == "y" or option == "yes" then
+                counter = 0
+                for itemPackage in pendingPackages
+                    output = main_session.aptclientLib.install(itemPackage)
+                    if output == true then
+                        counter = counter + 1
+                    else if output then
+                        print(output)
+                    end if
+                end for
+                print(counter + " packages updated")
+            else 
+                print("aborted")
+                return
+            end if
+        
+        //upgrade specific package
+        else if args.len == 2 then
+            output = main_session.aptclientLib.check_upgrade(args[1])
+            if not output then; print("No updates needed"); return; end if
+            if output == true then
+                print("The following package will be updated:\nargs[1]")
+                option = user_input("\nDo you want to continue?(y/n): ")
+                if option == "y" or option == "yes" then
+                    output = main_session.aptclientLib.install(args[1])
+                    if output == true then; print(args[1] + " installed."); return; end if
+                    print(output)				
+                else 
+                    print("aborted")
+                    return
+                end if
+            else 
+                print(output)
+            end if
+        end if
+        
+    else 
+        print(command_info("apt-get_usage"))
+    end if
+
+end function
+
+aptget.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+back = {}
+back.name = "back"
+back.args = "[N/A]"
+back.desc = "Backs out to the previous session."
+back.full_desc = "This command will back out to the previous session."
+back.handler_types = ["start", "shell", "computer", "file"]
+back.run = function(object, args)
+
+    sessions = main_session.sessionList
+    if sessions.len then
+        main_session.object = sessions[-1].object
+        main_session.handlerType = sessions[-1].objectType
+        main_session.pub_ip = sessions[-1].IP
+        main_session.loc_ip = sessions[-1].localIP
+        main_session.current_user = sessions[-1].user
+        main_session.sessionList = sessions[:-1]
+        print("Going back to the previous position.")
+        return
+    end if
+    main_session.object = get_shell
+    main_session.handlerType = "start"
+    main_session.pub_ip = get_shell.host_computer.public_ip
+    if params.indexOf("-a") != null or params.indexOf("--anonymous") != null then main_session.pub_ip = "HIDDEN"
+    main_session.loc_ip = get_shell.host_computer.local_ip
+    main_session.current_user = active_user
+    print("Back at starting point.")
+
+end function
+
+back.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+buffer = {}
+buffer.name = "buffer"
+buffer.args = "(LEN/ALL)"
+buffer.desc = "Shows used commands."
+buffer.full_desc = "This command will show the last used commands,\n where (LEN/ALL) is a number of how many commands to show,\n or ""ALL"" to list all commands inside the buffer."
+buffer.handler_types = ["start", "shell", "computer", "file"]
+buffer.run = function(object, args)
+
+    listBuffer(args)
+
+end function
+
+buffer.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+cat = {}
+cat.name = "cat"
+cat.args = "[PATH]"
+cat.desc = "Prints the contents of a file."
+cat.full_desc = "This command will prints the contents of a file,\n where [PATH] is the path to the file."
+cat.handler_types = ["start", "shell", "computer", "file"]
+cat.run = function(object, args)
+
+    read_file(object, args)
+
+end function
+
+cat.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+chgrp = {}
+chgrp.name = "chgrp"
+chgrp.args = "(-R) [GROUP] [PATH]"
+chgrp.desc = "Changes the group of a file or directory."
+chgrp.full_desc = "This command will change the group of a file or directory where (-R) is recursion,\n where [GROUP] is the new group of the file or directory,\n where [PATH] is the path of the file or directory."
+chgrp.handler_types = ["start", "shell", "computer", "file"]
+chgrp.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    //command: chgrp
+
+    group = args[0]
+    pathFile = args[1]
+    isRecursive = 0
+
+    if args.len == 3 then
+        group = args[1]
+        pathFile = args[2]
+        isRecursive = 1
+    end if
+
+    file = findFile(object, pathFile)
+    if file == null then; print("chgrp: can't find " + pathFile); return; end if
+    output = file.set_group(group, isRecursive)
+    if output then print(output)
+
+end function
+
+chgrp.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+chmodFile = {}
+chmodFile.name = "chmod"
+chmodFile.args = "(-R) [PERMS] [PATH]"
+chmodFile.desc = "Chmods a file or directory."
+chmodFile.full_desc = "This command will chmod a file or directory where (-R) is recursion,\n where [PARMS] are the permissions of the file,\n where [PATH] is the path to the file or directory."
+chmodFile.handler_types = ["start", "shell", "computer", "file"]
+chmodFile.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    //command: chmod
+    permissions = args[0]
+    pathFile = args[1]
+    isRecursive = 0
+
+    if args.len == 3 then
+        permissions = args[1]
+        pathFile = args[2]
+        isRecursive = 1
+    end if
+
+    file = findFile(object, pathFile)
+    if file == null then; print("chmod: can't find " + pathFile); return; end if
+    output = file.chmod(permissions, isRecursive)
+    if output then print(output)
+
+end function
+
+chmodFile.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+chown = {}
+chown.name = "chown"
+chown.args = "(-R) [OWNER] [PATH]"
+chown.desc = "Changes the owner of a file or directory."
+chown.full_desc = "This command will change the owner of a file or directory where (-R) is recursion,\n where [OWNER] is the new owner of the file or directory,\n where [PATH] is the path to the file or directory."
+chown.handler_types = ["start", "shell", "computer", "file"]
+chown.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    //command: chown
+    owner = args[0]
+    pathFile = args[1]
+    isRecursive = 0
+
+    if args.len == 3 then
+        owner = args[1]
+        pathFile = args[2]
+        isRecursive = 1
+    end if
+
+    file = findFile(object, pathFile)
+    if file == null then; print("chown: can't find " + pathFile); return; end if
+    output = file.set_owner(owner, isRecursive)
+    if output then print(output)
+
+end function
+
+chown.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+clear = {}
+clear.name = "clear"
+clear.args = "[N/A]"
+clear.desc = "Clears the screen."
+clear.full_desc = "This command will clear the screen."
+clear.handler_types = ["start", "shell", "computer", "file"]
+clear.run = function(object, args)
+
+    ascii_print()
+
+end function
+
+clear.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+compile = {}
+compile.name = "compile"
+compile.args = "[SRCPATH] [DESTPATH]"
+compile.desc = "Compiles a program from source."
+compile.full_desc = "This command will compile a program from source where [SRCPATH] is the path to the sourcecode,\n and [DESTPATH] the path of the compiled program."
+compile.handler_types = ["start", "shell"]
+compile.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    //command: compile
+    pathSource = args[0]
+    programPath = args[1]
+
+    shell = object
+    computer = shell.host_computer
+    fileSource = computer.File(pathSource)
+    folderDest = computer.File(programPath)
+
+    if fileSource == null then; print("compile: can't find "+ pathSource); return; end if
+    if folderDest == null then; print("compile: can't find " + programPath); return; end if
+        
+    output = shell.build(fileSource.path, folderDest.path)
+    if output.len == 0 then
+        print("compiled successfully.")
+    else
+        print(output);
+    end if
+
+end function
+
+compile.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+corruptlogs = {}
+corruptlogs.name = "corruptlogs"
+corruptlogs.args = "[N/A]"
+corruptlogs.desc = "Corrupts the logfile."
+corruptlogs.full_desc = "This command will currupt the logfile completely,\n and does not leave any log (not even disconnected!)."
+corruptlogs.handler_types = ["start", "shell", "computer", "file"]
+corruptlogs.run = function(object, args)
+
+    if typeof(object) == "shell" then fileObj = object.host_computer.File("/var")
+    if typeof(object) == "computer" then fileObj = object.File("/var")
+    if typeof(object) == "file" then fileObj = object
+    if not findFile(fileObj, "/var/system.log") or not findFile(fileObj, "/var/system.log").has_permission("w") then
+        no_perms = do_style("No permissions", "red", "static")
+        print(no_perms)
+        return
+    end if
+    if typeof(object) == "shell" then
+        object = object.host_computer
+        object.touch("/var", "system.bac")
+        syslogbak = object.File("/var/system.bac")
+        syslogbak.set_content("")
+
+        syslog = object.File("/var/system.log")
+        syslog.delete
+        syslogbak.move("/var", "system.log")
+
+    else if typeof(object) == "computer" then
+        object.touch("/var", "system.bac")
+        syslogbak = object.File("/var/system.bac")
+        syslogbak.set_content("")
+
+        syslog = object.File("/var/system.log")
+        syslog.delete
+        syslogbak.move("/var", "system.log")
+
+    else if typeof(object) == "file" then
+        fstab = findFile(object, "/etc/fstab")
+        fstab.copy("/var", "system.bac")
+
+        syslogbak = findFile(object, "/var/system.bac")
+        syslogbak.set_content("")
+
+        syslog = findFile(object, "/var/system.log")
+        syslog.delete
+        syslogbak.move("/var", "system.log")
+    end if
+    cleared = do_style("Logs are corrupted!", "green", "static")
+    print(cleared)
+
+end function
+
+corruptlogs.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+cp = {}
+cp.name = "cp"
+cp.args = "[PATH] [DESTPATH]"
+cp.desc = "Copies a file or directory."
+cp.full_desc = "This command will copy a file or directory where [PATH] is the path of the file or directory and,\n [DESTPATH] the path where the file or directory should be copied to."
+cp.handler_types = ["start", "shell", "computer", "file"]
+cp.run = function(object, args)
+
+    if args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var") 
+    //command: cp
+    origFile = args[0]
+    destFolder = args[1]
+    file = findFile(object, origFile)
+    folder = findFile(object, destFolder)
+    if not file then; print("cp: can't find " + origFile); return; end if
+    if not parent_path(destFolder) then; print("cp: can't find " + parent_path(destFolder)); return; end if
+    newName = ""
+    if not folder then
+        //Check if the user wants to put a new name.
+        pathParent = parent_path(destFolder)           
+        if pathParent == destFolder then			
+            newName = destFolder
+            destFolder = file.parent.path		
+            output = file.copy(destFolder, newName)
+            if output and output != 1 then print(output)
+            exit
+        end if
+        folder = findFile(object, pathParent)
+        newName = destFolder[destFolder.len - (destFolder.len - pathParent.len):]			
+        if newName[0] == "/" then
+            newName = newName[1:]
+        end if
+        if not folder then; print("cp: can't copy file. " + parent_path(destFolder) + " doesn't exist."); return; end if
+    end if
+    if folder then
+        //Check if is trying to copy the file on itself. Ignored.
+        if parent_path(file.path) != parent_path(folder.path) or file.name != folder.name then
+            finalDest = folder.path    
+            if(newName.len == 0) then
+                newName = file.name
+            end if
+            if not folder.is_folder then			
+                finalDest = parent_path(file.path)
+                newName = folder.name
+            end if
+            output = file.copy(finalDest, newName)
+            if output and output != 1 then print(output)
+        end if
+    end if
+
+end function
+
+cp.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+crack = {}
+crack.name = "crack"
+crack.args = "[HASH]"
+crack.desc = "Cracks an MD5 hash."
+crack.full_desc = "This command will crack an MD5 hash, where [HASH] is the hash without user."
+crack.handler_types = ["start", "shell", "computer", "file"]
+crack.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    //command: decipher
+    if not main_session.cryptoLib then; print("Error: Missing crypto library"); return; end if
+
+    GetPassword = function(userPass)
+        password = main_session.cryptoLib.decipher(userPass)
+        return password
+    end function
+
+    password = GetPassword(args[0])
+        
+    if not password then
+        print("Can't find password")
+        return
+    end if
+    print("password found! => " + password)
+
+end function
+
+crack.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+credits = {}
+credits.name = "credits"
+credits.args = "[N/A]"
+credits.desc = "Shows everyone that helped with Viper."
+credits.full_desc = "This command will show everyone that helped with Viper."
+credits.handler_types = ["start", "shell", "computer", "file"]
+credits.run = function(object, args)
+
+    string = char(10)
+    string = string+"Maintainer: Volk"+char(10)
+    string = string+"Viper is created by Volk."+char(10)
+    string = string+"My special thanks go to Eraser,"+char(10)
+    string = string+"for helping me refactor Viper into a more effecient program."+char(10)
+    print(string)
+
+end function
+
+credits.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+
+deepscan = {}
+deepscan.name = "deepscan"
+deepscan.args = "[IP]"
+deepscan.desc = "Scans every IP behind a router."
+deepscan.full_desc = "This command will scan every IP behind a router where [IP] is the IP,\n when used inside the network it will scan all IP's inside the network."
+deepscan.handler_types = ["start", "shell", "computer", "file"]
+deepscan.run = function(object, args)
+
+    if not args or not args.len then; self.show_help; return; end if
+    if args.len == 1 then
+        ip = args[0]
+        if not is_valid_ip(ip) then; print("IP "+ip+" not found!"); return; end if
+        router = get_router(ip)
+        if not router then; print(do_style("IP is not a router or public IP!", "red", "static")); return; end if
+        print(" ")
+        print(do_style(router.local_ip, "text").replace("\.",do_style(".", "title")))
+        ipscan(ip, [])
+        print(" ")
+        return
+    else if args.len >= 2 then
+        fileObject = object.host_computer.File("/var")
+        file = findFile(fileObject, args[1])
+        if file then
+            object.launch(args[1], args[0]+" deepscan")
+            return
+        end if
+        print("Jump file does not exist!")
+        return
+    end if
+
+end function
+
+deepscan.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+delgroup = {}
+delgroup.name = "delgroup"
+delgroup.args = "[USER] [GROUP]"
+delgroup.desc = "Removes a user from a group."
+delgroup.full_desc = "This command will remove a user to a group where [USER] is the user and [GROUP] the group."
+delgroup.handler_types = ["start", "shell", "computer"]
+delgroup.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: groupdel
+
+    user = args[0]
+    group = args[1]
+
+    output = object.create_group(user, group)
+    if output == true then; print("Group " + group + " deleted from user " + user); return; end if
+    if output then; print(output); return; end if
+    print("Error: the group could not be deleted.")
+
+end function
+
+delgroup.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+dellib = {}
+dellib.name = "dellib"
+dellib.args = "[INDEX]"
+dellib.desc = "Deletes a library from the library list."
+dellib.full_desc = "This command will delete a library from the library list where [INDEX] is the library."
+dellib.handler_types = ["start", "shell", "computer", "file"]
+dellib.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    for index in args
+        if index.split("-").len == 2 then
+            for object in range(index.split("-")[0].to_int, index.split("-")[1].to_int)
+                main_session.libList.remove(object)
+            end for
+            continue
+        end if
+        main_session.libList.remove(index.to_int)
+    end for
+    globals.main_session.libList = sortMap(main_session.libList)
+
+end function
+
+dellib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+deltarget = {}
+deltarget.name = "deltarget"
+deltarget.args = "[INDEX]"
+deltarget.desc = "Deletes a target from the targets list."
+deltarget.full_desc = "This command will delete target from the targets list, where [INDEX] is the index of the target."
+deltarget.handler_types = ["start", "shell", "computer", "file"]
+deltarget.run = function(object, args)
+    
+    if not args then
+        self.show_help()
+        return
+    end if
+
+    if args[0].lower() == "all" then args = ["0-1000"]
+    delete_target("objectList", args)
+
+end function
+
+deltarget.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+deluser = {}
+deluser.name = "deluser"
+deluser.args = "[USER]"
+deluser.desc = "Deletes a user from the computer."
+deluser.full_desc = "This command will delete a user from the computer where [USER] is the user."
+deluser.handler_types = ["start", "shell", "computer"]
+deluser.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: userdel
+
+    output = object.delete_user(args[0], 0)
+    if output == true then; print("user " + args[0] + " deleted."); return; end if
+    if output then; print(output); return; end if
+    print("Error: user not deleted.")
+
+end function
+
+deluser.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+delvar = {}
+delvar.name = "delvar"
+delvar.args = "[KEY]"
+delvar.desc = "Removes a variable to the list of variables."
+delvar.full_desc = "This command will remove a variable to the list of variabels where [KEY] is the name of the variable."
+delvar.handler_types = ["start", "shell", "computer", "file"]
+delvar.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    main_session.vars.remove(args[0])
+
+end function
+
+delvar.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+echo = {}
+echo.name = "echo"
+echo.args = "[STRING]"
+echo.desc = "Prints text to the screen."
+echo.full_desc = "This command will print text to the screen."
+echo.handler_types = ["start", "shell", "computer", "file"]
+echo.run = function(object, args)
+
+    string = ""
+    for word in args
+        string = string+word+" "
+    end for
+    print(char(10)+string+char(10))
+
+end function
+
+echo.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+exec = {}
+exec.name = "exec"
+exec.args = "[PATH]"
+exec.desc = "Executes a program."
+exec.full_desc = "This command will execute a program where [PATH] is the path to the program."
+exec.handler_types = ["start", "shell"]
+exec.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    program = args[0]
+    params = ""
+    if args.len >= 2 then
+        for arg in args[1:]
+            if params == "" then
+                params = arg
+                continue
+            end if
+            params = params+" "+arg
+        end for
+    end if
+    object.launch(program, params)
+
+end function
+
+exec.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+do_exit = {}
+do_exit.name = "exit"
+do_exit.args = "[N/A]"
+do_exit.desc = "Exits Viper."
+do_exit.full_desc = "This command will exit Viper."
+do_exit.handler_types = ["start", "shell", "computer", "file"]
+do_exit.run = function(object, args)
+
+    interop = get_custom_object()
+    interop.viper = main_session.objectList
+    interop.vlibs = main_session.libList
+    main_session.exit = true
+
+end function
+
+do_exit.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+exploit = {}
+exploit.name = "exploit"
+exploit.args = "[IP/LIB] (PORT) [MEM] [VULN] (IP/PASS)"
+exploit.desc = "Exploits a target library or service."
+exploit.full_desc = "This command will exploit a target library or service,\n where [IP/LIB] is the IP or library to exploit,\n where (PORT) is the port of the service (not used when exploiting a library),\n where [MEM] is the memory address,\n where [VULN] is the vulnerable string,\n where (IP/PASS) is a local IP for a bounce exploit or PASS to inject a new password."
+exploit.handler_types = ["start", "shell", "computer", "file"]
+exploit.run = function(_, args)
+
+    if not args or args.len < 3 then; show_help(self.name, self.args, self.full_desc, self.handler_types); return; end if
+    usage = "Example: [IP/Library] [port] [memAddress] [vulnString] (IP/Password)"
+    localIP = "unknown"
+
+    if is_valid_ip(args[0]) and args.len > 3 then
+        IP = args[0]
+        PORT = args[1].to_int
+        memAddress = args[2]
+        vulnString = args[3]
+        extra = "."
+        if args.len >= 5 then
+            extra = args[4]
+        end if
+        netSession = main_session.MetaxploitLib.net_use(IP, PORT)
+        if not netSession then; print("Could not connect to port: "+PORT); return; end if
+        object = netSession.dump_lib.overflow(memAddress, vulnString, extra)
+        objectType = typeof(object)
+        if not object then; print("Exploit not found!"); return; end if
+        if objectType == "shell" then
+            localIP = object.host_computer.local_ip
+            IP = object.host_computer.public_ip
+            user = userCheck(object.host_computer.File("/var"))
+        else if objectType == "computer" then
+            localIP = object.local_ip
+            IP = object.public_ip
+            user = userCheck(object.File("/var"))
+        else if objectType == "file" then
+            user = userCheck(object)
+            router = get_router(IP)
+            if router and not is_lan_ip(IP) then
+                if PORT == 0 or PORT == 8080 then
+                    localIP = router.local_ip
+                    IP = router.public_ip
+                else
+                    for port in router.used_ports
+                        if port.port_number == PORT then
+                            localIP = port.get_lan_ip
+                            break
+                        end if
+                    end for
+                end if
+            else if IP then
+                localIP = IP
+                ip = main_session.MetaxploitLibPublicIP
+            else
+                localIP = main_session.MetaxploitLibLocalIP
+                ip = main_session.MetaxploitLibPublicIP
+            end if
+        end if
+    else
+        library = args[0]
+        memAddress = args[1]
+        vulnString = args[2]
+        extra = "."
+        if args.len >= 4 then
+            extra = args[3]
+        end if
+        metalib = main_session.MetaxploitLib.load("/lib/"+library)
+        if not metalib then; print("Could not load library: "+library); return; end if
+        object = metalib.overflow(memAddress, vulnString, extra)
+        objectType = typeof(object)
+        if not object then; print("Exploit not found!"); return; end if
+        if objectType == "shell" then
+            IP = object.host_computer.public_ip
+            localIP = object.host_computer.local_ip
+            user = userCheck(object.host_computer.File("/var"))
+        else if objectType == "computer" then
+            IP = object.public_ip
+            localIP = object.local_ip
+            user = userCheck(object.File("/var"))
+        else if objectType == "file" then
+            IP = main_session.MetaxploitLibPublicIP
+            localIP = main_session.MetaxploitLibLocalIP
+            user = userCheck(object)
+        end if
+    end if
+    if not object then
+        print("Object not found!")
+        return
+    else if objectType == "string" then
+        print(object)
+        return
+    else if objectType == "number" then
+        return
+    end if
+    main_session.objectList[main_session.objectList.len] = {"IP":IP, "objectType":objectType, "object":object, "localIP":localIP, "user":user}
+
+end function
+
+exploit.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+exploitscan = {}
+exploitscan.name = "exploitscan"
+exploitscan.args = "[LIB/IP] [PORT] (PASS/LANIP)"
+exploitscan.desc = "This command will scan a library or IP for exploits."
+exploitscan.full_desc = "This command will scan a library or IP for exploits,\n where [LIB/IP] is a library or IP,\n where [PORT] is the port of a service to attack (this can be skipped when attacking a local library),\n where (PASS/LANIP) is a password to inject a new password,\n or local IP of any computer on the network for a bounce attack.\n it is possible to add a variable called ""lib"" with a library index, which will be used to scan from."
+exploitscan.handler_types = ["start", "shell", "computer", "file"]
+exploitscan.run = function(object, args)
+
+    exploit_scan(main_session.handlerType, args)
+
+end function
+
+exploitscan.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+findlib = {}
+findlib.name = "findlib"
+findlib.args = "[LIB] [VERSION]"
+findlib.desc = "Scans greyhack for a library."
+findlib.full_desc = "This command will scan greyhack for a library where [LIB] is the library,\n and [VERSION] is the version."
+findlib.handler_types = ["start", "shell", "computer", "file"]
+findlib.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if args[0] == "kernel_router" then
+        count = 0
+        start = time
+        print(" ")
+        print(do_style("Searching for library "+args[0]+" "+args[1]+"...", "text"))
+        while true
+            if get_shell.host_computer.show_procs.split("Map").len > 1 then
+                break
+            end if
+            count = count+1
+            ip = get_random_ip
+            if not check_router(ip, args[1]) then continue
+            print(" ")
+            print(do_style("Library found!", "green", "static"))
+            print("IP containing kernel_router.so "+args[1]+" found at ip: "+ip)
+            print("Tried "+count+" times. Spent "+str(time - start)+" seconds.")
+            print(" ")
+            return
+            wait(0.01)
+        end while
+    end if
+
+    count = 0
+    start = time
+    print(" ")
+    print(do_style("Searching for library "+args[0]+" "+args[1]+"...", "text"))
+    while true
+        if get_shell.host_computer.show_procs.split("Map").len > 1 then
+            break
+        end if
+        count = count+1
+        ip = get_random_ip
+        router = get_router(ip)
+        if not router then router = get_switch(ip)
+        if not router then continue
+        if not check_service(router, args[0], args[1]) then continue
+        print(" ")
+        print(do_style("Library found!", "green", "static"))
+        print("IP containing service "+args[0]+" "+args[1]+" found at ip: "+ip)
+        print("Tried "+count+" times. Spent "+str(time - start)+" seconds.")
+        print(" ")
+        return
+        wait(0.01)
+    end while
+
+end function
+
+findlib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+fs = {}
+fs.name = "fs"
+fs.args = "[N/A]"
+fs.desc = "Lists the whole filesystem."
+fs.full_desc = "This command will list the whole filesystem."
+fs.handler_types = ["start", "shell", "computer", "file"]
+fs.run = function(object, args)
+
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    FileSystem = {}
+    FileSystem.listFiles = function(handle)
+        tld = null
+        if typeof(handle) == "file" then
+            tld = FileSystem.file_get_tld(handle)
+        else
+            print("Handle not a file")
+            return null
+        end if
+        FileSystem.print_contents(tld)
+    end function
+    FileSystem.check_permissions = function(file)
+        if not file then
+            print("File " + file + " does not exist")
+            return null
+        end if
+        return file
+    end function
+    FileSystem.file_get_tld = function(handle)
+        tld = FileSystem.check_permissions(handle.parent)
+        while tld.path != "/"
+            tld = FileSystem.check_permissions(tld.parent)
+        end while
+        return tld
+    end function
+    FileSystem.print_contents = function(file, indent=0, newLine)
+        buffer = "―" * indent
+        file_name = do_style(file.name, "text")
+        if file.is_folder then
+            file_name = do_style(file.path, "light_blue", "static")
+        end if
+        if file.has_permission("r") and file.has_permission("w") and file.has_permission("x") then
+            line = newLine+do_style(buffer+"»"+file.permissions+" "+file.owner+" "+file.group+" "+file_name, "green", "static")
+        else if file.has_permission("r") or file.has_permission("w") or file.has_permission("x") then
+            line = newLine+do_style(buffer+"»"+file.permissions+" "+file.owner+" "+file.group+" "+file_name, "yellow", "static")
+        else
+            line = newLine+do_style(buffer+"»"+file.permissions+" "+file.owner+" "+file.group+" "+file_name, "red", "static")
+        end if
+        print(line)
+        if file.is_folder then
+            for sub_file in file.get_files
+                newLine = ""
+                FileSystem.print_contents(sub_file, indent+2, newLine)
+            end for
+            for folder in file.get_folders
+                newLine = char(10)
+                FileSystem.print_contents(folder, indent+2, newLine)
+            end for
+        end if
+    end function
+    print(" ")
+    FileSystem.listFiles(object)
+    print()
+
+end function
+
+fs.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+ftp = {}
+ftp.name = "ftp"
+ftp.args = "[USER@PASSWORD] [IP] (PORT)"
+ftp.desc = "Connects to a service using ftp."
+ftp.full_desc = "This command will connects to a server using ftp where [USER@PASSWORD] is the user and password,\n where [IP] is the IP of ther server,\n where (PORT) is an optional port."
+ftp.handler_types = ["start", "shell"]
+ftp.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    
+    //Command: ssh
+    credentials = args[0].split("@")
+    user = credentials[0]
+    password = credentials[1]
+
+    port = 21
+    // params is a list of strings, so you have to convert it to integer, which is what connect_service accepts.
+    if args.len == 3 then port = args[2].to_int
+    if typeof(port) != "number" then; print("Invalid port: " + port); return; end if
+    print("Connecting...")
+
+    remoteFtp = object.connect_service(args[1], port, user, password, "ftp")
+    if typeof(remoteFtp) == "string" then; print(remoteFtp); return; end if
+    if remoteFtp then
+        print("Connected!")
+        main_session.pub_ip = remoteShell.host_computer.public_ip
+        main_session.handlerType = typeof(remoteShell)
+        main_session.object = remoteShell
+        main_session.loc_ip = remoteShell.host_computer.local_ip
+        main_session.current_user = user
+    else 
+        print("connection failed")
+    end if
+
+end function
+
+ftp.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+shellGet = {}
+shellGet.name = "get"
+shellGet.args = "[REMPATH] [DESTPATH]"
+shellGet.desc = "Downloads a file."
+shellGet.full_desc = "This command will download a file where [REMPATH] is the path to the file or directory, and [DESTPATH] is the path to the directory to put the file."
+shellGet.handler_types = ["start", "shell"]
+shellGet.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then
+        filePath = args[0]
+        hostPath = args[1]
+        if filePath == "" or hostPath == "" then; self.show_help; return; end if
+        err = object.scp(filePath, hostPath, get_shell)
+    else if typeof(object) == "ftpshell" then
+        filePath = args[0]
+        hostPath = args[1]
+        err = object.put(filePath, hostPath, get_shell)
+    end if
+
+end function
+
+shellGet.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+getlib = {}
+getlib.name = "getlib"
+getlib.args = "[PATH] [JUMPFILE]"
+getlib.desc = "Imports a library."
+getlib.full_desc = "This command will import a library where [PATH] is the path to the library,\n and [JUMPFILE] is the path to the jumpfile."
+getlib.handler_types = ["start", "shell"]
+getlib.run = function(object, args)
+    cargo = get_custom_object
+
+    if main_session.handlerType == "start" then
+        if not args or args.len < 1 then; self.show_help; return; end if
+        newObject = include_lib(args[0])
+        
+        if not newObject then; print("Unable to load library!"); return; end if
+        
+        if typeof(newObject) != "MetaxploitLib" and typeof(newObject) != "cryptoLib" and typeof(newObject) != "aptclientLib" then
+            print("Library "+typeof(newObject)+" unable to load!")
+            return
+        end if
+        
+        libVersion = "unknown"
+        if main_session.MetaxploitLibLocalIP+main_session.MetaxploitLibPublicIP == object.host_computer.local_ip+object.host_computer.public_ip then libVersion = main_session.MetaxploitLib.load(args[0]).version
+        if typeof(newObject) == "MetaxploitLib" then
+            libVersion = newObject.load(args[0]).version
+        else
+            for library in main_session.libList
+                if typeof(library["value"].lib) == "MetaxploitLib" and library["value"].publicIP == object.host_computer.public_ip and library["value"].localIP == object.host_computer.local_ip then
+                    libVersion = library["value"].lib.load(args[0]).version
+                end if 
+            end for
+        end if
+
+        main_session.libList[main_session.libList.len] = {"lib":newObject, "publicIP":object.host_computer.public_ip, "localIP":object.host_computer.local_ip, "version":libVersion, "used":0}
+        print("Library "+typeof(newObject).lower.replace("lib","")+" imported!")
+        return
+    end if
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    fileObject = object.host_computer.File("/var")
+    file = findFile(fileObject, args[1])
+    if file then
+        clearInterface(cargo)
+        object.launch(args[1], args[0])
+        if hasIndex(cargo, "glib") then
+            
+            if not verifyObject(@cargo.glib) then
+                print("AV detected injection!")
+                clearInterface(cargo)
+                return
+            end if
+
+            newObject = cargo.glib
+            clearInterface(cargo)
+        else
+            print("Jump file corrupted!")
+            clearInterface(cargo)
+            return
+        end if
+        
+        if not newObject then; print("Unable to load library!"); return; end if
+        
+        if typeof(newObject) != "MetaxploitLib" and typeof(newObject) != "cryptoLib" and typeof(newObject) != "aptclientLib" then
+            print("Library "+typeof(newObject)+" unable to load!")
+            return
+        end if
+
+        libVersion = "unknown"
+        if main_session.MetaxploitLibLocalIP+main_session.MetaxploitLibPublicIP == object.host_computer.local_ip+object.host_computer.public_ip then libVersion = main_session.MetaxploitLib.load(args[0]).version 
+        if typeof(newObject) == "MetaxploitLib" then
+            libVersion = newObject.load(args[0]).version
+        else
+            for library in main_session.libList
+                if typeof(library["value"].lib) == "MetaxploitLib" and library["value"].publicIP == object.host_computer.public_ip and library["value"].localIP == object.host_computer.local_ip then
+                    libVersion = library["value"].lib.load(args[0]).version
+                end if 
+            end for
+        end if
+    
+        main_session.libList[main_session.libList.len] = {"lib":newObject, "publicIP":object.host_computer.public_ip, "localIP":object.host_computer.local_ip, "version":libVersion, "used":0}
+        print("Library "+typeof(newObject).lower.replace("lib","")+" imported!")
+        return
+    end if
+    print("Jump file does not exist!")
+    return
+
+end function
+
+getlib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+getviper = {}
+getviper.name = "getviper"
+getviper.args = "[PATH] (ARGS)"
+getviper.desc = "Launches another instance of Viper."
+getviper.full_desc = "This command will launch another instance of Viper and will get the objects and imports from the other instance,\n where [PATH] is the path to the new instance of Viper,\n where (ARGS) is any optional arguments."
+getviper.handler_types = ["start", "shell"]
+getviper.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    argument = ""
+    if args.len >= 2 then argument = args[1]
+    viperPath = object.host_computer.File(args[0])
+    if not viperPath then; print("Viper not found!"); return; end if
+    wait(1)
+    cargo = get_custom_object
+    clearInterface(cargo)
+    object.launch(args[0], argument)
+    if hasIndex(cargo, "viper") then
+        for index in @cargo.viper
+
+            if not verifyObject(@index.value.object) then // first verify index.value before index.value.object, make recusrive function to check all
+                print("AV detected injection!")
+                clearInterface(cargo)
+                return
+            end if
+            
+            main_session.objectList[main_session.objectList.len] = index.value
+        end for
+        print("Objects imported!")
+    else
+        print("Viper currupted!")
+    end if
+
+    if hasIndex(cargo, "vlibs") then
+        for index in @cargo.vlibs
+
+            if not verifyObject(@index.value.lib) then
+                print("AV detected injection!")
+                clearInterface(cargo)
+                return
+            end if
+
+            index.value["used"] = 0
+            main_session.libList[main_session.libList.len] = index.value
+        end for
+        print("Libraries imported!")
+    else
+        print("Viper currupted!")
+    end if
+    clearInterface(cargo)
+
+end function
+
+getviper.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+gpg = {}
+gpg.name = "gpg"
+gpg.args = "[-e/-d] [KEY] [PATH/STRING]"
+gpg.desc = "Encrypts/decrypts a string or file."
+gpg.full_desc = "This command will encrypt or decrypt a string or file where [-e/-d] is wether to encrypt or decrypt,\n where [KEY] is a 16 character long string,\n where [PATH/STRING] is the path to a file or string to encrypt/decrypt."
+gpg.handler_types = ["start", "shell", "computer", "file"]
+gpg.run = function(object, args)
+
+    if not args or args.len < 3 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    if args[1].len != 16 then; print("Error: Key must be 16 characters long."); return; end if
+    if args[0] == "-e" then type = "encrypt"
+    if args[0] == "-d" then type = "decrypt"
+    key = args[1]
+    encString = args[2]
+    file = findFile(object, args[2])
+
+    if file != null then
+        encString = file.get_content
+    end if
+
+    r = AES128(type, key, encString)
+
+    if typeof(r) == "null" then r = "Error"
+    print("-----BEGIN GPG MESSAGE-----")
+    print(r)
+    print("-----END GPG MESSAGE-----")
+
+end function
+
+gpg.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+grab = {}
+grab.name = "grab"
+grab.args = "[BANK/MAIL/ALL]"
+grab.desc = "Grabs all banks and emails."
+grab.full_desc = "This command will grab all banks and emails where [BANK/MAIL/ALL] is what to grab."
+grab.handler_types = ["start", "shell", "computer", "file"]
+grab.run = function(object, args)
+
+    if not args or args.len != 1 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+
+    home = findFile(object, "/home")
+
+    if not home then
+        print("/home does not exist!")
+        return
+    end if
+
+    print(" ")
+    for folder in home.get_folders
+        if args[0].lower == "bank" or args[0].lower == "all" then
+            for config in folder.get_folders
+                for file in config.get_files
+                    if file.name == "Bank.txt" then print(file.get_content)
+                end for
+            end for
+        end if
+        if args[0].lower == "email" or args[0].lower == "mail" or args[0].lower == "all" then
+            for config in folder.get_folders
+                for file in config.get_files
+                    if file.name == "Mail.txt" then print(file.get_content)
+                end for
+            end for
+        end if
+        if args[0].lower != "bank" and args[0].lower != "mail" and args[0].lower != "email" and args[0].lower != "all" then
+            self.show_help
+            return
+        end if
+    end for
+    print(" ")
+
+end function
+
+grab.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+getGroups = {}
+getGroups.name = "groups"
+getGroups.args = "[USER]"
+getGroups.desc = "Shows the groups of a user."
+getGroups.full_desc = "This command will show all the groups a user is part of,\n where [USER] is the user."
+getGroups.handler_types = ["start", "shell", "computer"]
+getGroups.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: groups
+    user = args[0]
+    output = object.groups(user)
+    if not output then; self.show_help; return; end if
+    print(output)
+
+end function
+
+getGroups.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+help = {}
+help.name = "help"
+help.args = "[COMMAND]"
+help.desc = "Displays the help page."
+help.full_desc = "This command will display the help pages. \nWhere [COMMAND] is a command that you would like a detailed discription about."
+help.handler_types = ["start", "shell", "computer", "file"]
+help.run = function(object, args)
+
+    if args and args[0] != "" then
+        if commands.hasIndex(args[0]) then
+            commands[args[0]].show_help
+            return
+        else
+            print("Command: "+args[0]+" not found!")
+            return
+        end if
+    else
+        string = do_style("COMMAND", "title")+" "+do_style("ARGUMENTS", "title")+" "+do_style("DESCRIPTION", "title")+"\n"+do_style("-------", "text")+" "+do_style("---------", "text")+" "+do_style("-----------", "text")+"\n"
+        for command in commands
+            if command.value.handler_types.indexOf(main_session.handlerType) == null then
+                string = string+do_style(command.value.name, "red", "static")+" "+do_style(command.value.args.replace(" ","|"), "red", "static")+" "+do_style(command.value.desc.replace(" ","|"), "text")+"\n"
+                continue
+            end if
+            string = string+do_style(command.value.name, "arg")+" "+do_style(command.value.args.replace(" ","|"), "arg")+" "+do_style(command.value.desc.replace(" ","|"), "text")+"\n"
+        end for
+
+        print("\n"+format_columns(string).replace("\|"," ")+"\n")
+    end if
+
+end function
+
+help.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+
+// Color constants for better output
+COLOR_DEFAULT = "#009900"
+COLOR_ERROR = "#FF0000"
+COLOR_INFO = "#33CCFF"
+COLOR_WARNING = "#FFA500"
+COLOR_SUCCESS = "#00FF00"
+    
+// Utility function to print colored messages
+printMsg = function(msg, color=COLOR_DEFAULT)
+    print("<color=" + color + ">" + msg + "</color>")
+end function
+    
+// Function to write results to a file
+writeToFile = function(fileName, data)
+    print typeof(data)
+    print(data)
+    computer = get_shell.host_computer
+    computer.create_folder("/home/" + active_user, "ipscan")
+    touch(computer, "/home/" +active_user+ "/ipscan/", fileName)
+    file = computer.File("/home/" +active_user+ "/ipscan/" + fileName)
+    file.set_content("Scan results:\n" + data) 
+end function
+
+getRandomIp = function
+    while true
+        ip = floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1) + "." + floor((rnd * 255) + 1)
+        if not is_valid_ip(ip) then continue
+        if is_lan_ip(ip) then continue
+        return ip
+    end while
+end function
+    
+scanLibrary = function(lib, ver, ipCountLimit)
+    ipCount = 0      // Number of successful matches found
+    scannedIps = 0   // Total number of IPs scanned
+    matches = []     // Store valid results
+
+    // Compose scan message
+    scanMessage = "Scanning for " + lib
+    if ver then
+        scanMessage = scanMessage + " v" + ver
+    else
+        scanMessage = scanMessage + " (any version)"
+    end if
+    printMsg(scanMessage, COLOR_SUCCESS)
+
+    // Main loop: continue until the desired number of matches are found
+    while ipCount < ipCountLimit
+        wait(0.05)
+        ip = getRandomIp()
+        scannedIps = scannedIps + 1
+        printMsg("Scanning IP " + scannedIps + ": " + ip, COLOR_INFO)
+
+        if is_lan_ip(ip) then 
+            continue
+        end if
+
+        router = get_router(ip)
+        if not router then 
+            continue
+        end if
+
+        foundMatch = false  // Reset for each IP
+
+        if lib == "router" then
+            kernelVer = router.kernel_version
+            if not ver or kernelVer == ver then
+                matches.push(ip + " router kernel " + kernelVer)
+                foundMatch = true
+                printMsg("Added match: " + ip + " router kernel " + kernelVer, COLOR_SUCCESS)  // Debug print
+            end if
+        else
+            ports = router.used_ports
+            for port in ports
+                info = splitString(router.port_info(port), " ")
+                if info.len < 2 then 
+                    continue
+                end if
+                portLib = info[0]
+                portVer = info[-1]
+                if portLib == lib then
+                    if not ver or portVer == ver then
+                        matches.push(ip + ":" + port.port_number + " " + portLib + " " + portVer)
+                        foundMatch = true
+                        printMsg("Added match: " + ip + ":" + port.port_number + " " + portLib + " " + portVer, COLOR_SUCCESS)  // Debug print
+                    end if
+                end if
+            end for
+        end if
+
+        // Increment the match count only if we found a match for this IP
+        if foundMatch then
+            ipCount = ipCount + 1
+        end if
+    end while
+
+    printMsg("Scanned " + scannedIps + " IPs, found " + ipCount + " matches", COLOR_WARNING)
+
+    // Debugging: Print matches before writing to file
+    if matches.len == 0 then
+        printMsg("No valid IPs found.", COLOR_ERROR)
+    else
+        printMsg("Matches Found:", COLOR_INFO)
+        for match in matches
+            printMsg(match, COLOR_SUCCESS)
+        end for
+
+        // Write results to the file
+        outputText = "Scan Results:\n" + matches.join("\n")
+        writeToFile("scan_results.txt", outputText)
+        printMsg("Results saved to scan_results.txt", COLOR_SUCCESS)
+    end if
+
+    rescan(lib, ver, ipCountLimit)
+end function
+    
+// Display menu and get user choice
+menu = function()
+    clear_screen
+    printMsg("[Available Libraries]", COLOR_INFO)
+    options = ["1: ssh", "2: repository", "3: chat", "4: http", "5: ftp", "6: rshell", "7: router"]
+    for opt in options
+        printMsg(opt, COLOR_DEFAULT)
+    end for
+    return user_input("Enter number (1-7): ")
+end function
+    
+// Handle rescan options
+rescan = function(lib, ver, ipCountLimit)
+    printMsg("\nScan complete!", COLOR_SUCCESS)
+    printMsg("Options:", COLOR_INFO)
+    printMsg("1: Rescan same library", COLOR_DEFAULT)
+    printMsg("2: Return to menu", COLOR_DEFAULT)
+    printMsg("3: Exit", COLOR_DEFAULT)
+    
+    choice = user_input("Choice (1-3): ")
+    if choice == "1" then
+        scanLibrary(lib, ver, ipCountLimit)
+    else if choice == "2" then
+        ipgen_main()
+    else if choice == "3" then
+        exit("Exiting...")
+    else
+        printMsg("Invalid choice, returning to menu", COLOR_ERROR)
+        ipgen_main()
+    end if
+end function
+
+// Custom function to split a string by a delimiter in GreyScript (without indexOf)
+splitString = function(str, delimiter)
+    result = []
+
+    while true
+        index = null
+
+        // Manually search for the first occurrence of the delimiter
+        i = 0
+        while i < str
+            if str[i] == delimiter then
+                index = i
+                break
+            end if
+            i = i + 1
+        end while
+
+        if index == null then  // No delimiter found, store remaining string
+            result.push(str)
+            break
+        end if
+
+        // Extract substring before delimiter and add to result list
+        result.push(str.sub(0, index))
+
+        // Remove extracted portion, advancing past delimiter
+        str = str.sub(index + 1)  // Removed `.len`
+    end while
+
+    return result
+end function
+
+// Main function with optional parameters
+ipgen_main = function(ipCountLimit=null, lib=null, ver=null)
+    if not ipCountLimit then
+        rawInput = user_input("Number of IPs to find? > ")
+        ipCountLimit = rawInput.to_int
+        print ipCountLimit
+        if not typeof(ipCountLimit) == "number" then
+            printMsg("Invalid input. Please enter a numeric value.", COLOR_ERROR)
+            return
+        end if
+        
+        if not (ipCountLimit > 0) then
+            printMsg("Please enter a positive number", COLOR_ERROR)
+            return
+        end if
+    end if
+
+    if not lib then
+        choice = menu()
+        libMap = {
+            "1": "ssh",
+            "2": "repository",
+            "3": "chat",
+            "4": "http",
+            "5": "ftp",
+            "6": "rshell",
+            "7": "router",
+        }
+        lib = libMap[choice]
+        if not lib then
+            exit("Invalid choice. Usage: [lib] (version)")
+        end if
+    end if
+
+    if not ver and not (lib == "rshell") then  // Fixed: replaced `!=` with `not (value == otherValue)`
+        verInput = user_input("Enter version (press Enter for any): ")
+        if not (verInput == "") then ver = verInput
+    end if
+
+    scanLibrary(lib, ver, ipCountLimit)
+end function
+
+// Define the command object for running the script
+ipgen = {}
+ipgen.name = "ipgen"
+ipgen.args = "[IP_COUNT] (LIBRARY) (VERSION)"
+ipgen.desc = "Scans for services and generates valid IP addresses."
+ipgen.full_desc = "This command scans a specified number of IPs and searches for a given library/service.\n" + 
+                    "Where [IP_COUNT] is the number of IPs to scan,\n" + 
+                    "where (LIBRARY) is the optional service to scan for,\n" + 
+                    "where (VERSION) is the optional version of the service."
+
+ipgen.handler_types = ["start", "shell"]
+ipgen.run = function(object, args)
+    argsList = splitString(args, " ")
+    ipCountLimit = null
+    lib = null
+    ver = null
+
+    if argsList.len > 0 then
+        rawInput = argsList[0]
+
+        // Ensure input is purely numeric before conversion
+        valid = true
+        i = 0
+        while i < rawInput
+            char = rawInput[i]
+            if not ("0" <= char and char <= "9") then
+                valid = false
+                break
+            end if
+            i = i + 1
+        end while
+
+        if valid then
+            ipCountLimit = rawInput * 1  // Convert to number
+        else
+            printMsg("Invalid IP count. Please enter a numeric value.", COLOR_ERROR)
+            return
+        end if
+    end if
+
+    if argsList.len > 1 then
+        lib = argsList[1]
+    end if
+
+    if argsList.len > 2 then
+        ver = argsList[2]
+    end if
+
+    ipgen_main(ipCountLimit, lib, ver)
+end function
+    
+ipgen.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+
+iwlist = {}
+iwlist.name = "iwlist"
+iwlist.args = "[NETDEVICE]"
+iwlist.desc = "Shows available networks."
+iwlist.full_desc = "This command will show all available networks, where [NETDEVICE] is the network card."
+iwlist.handler_types = ["start", "shell", "computer"]
+iwlist.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: iwlist
+    devices = object.network_devices
+    if devices == null or devices.indexOf(args[0]) == null then; print("iwlist: Network device not found"); return; end if
+    if args[0].indexOf("eth") != null then; print("iwlist: ethernet cards not supported for this command"); return; end if
+    networks = object.wifi_networks(args[0])
+
+    info = "BSSID PWR ESSID"
+    for network in networks
+        info = info + "\n" + network
+    end for
+    print(format_columns(info))
+
+end function
+
+iwlist.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+jump = {}
+jump.name = "jump"
+jump.args = "[PATH] (NAME)"
+jump.desc = "Creates a jump file."
+jump.full_desc = "This command will create a jumpfile which is used in other commands.\n[PATH] is the directory the jumpfile should be created in,\n and (NAME) should be the name of the jumpfile."
+jump.handler_types = ["start", "shell"]
+jump.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    jumpName = "jumpfile"
+    if args.len >= 2 then jumpName = args[1]
+    pc = object.host_computer
+    file = pc.File(args[0])
+    if not file or not file.is_folder or not file.has_permission("w") then; print("Error, check if folder exists and has write perms!"); return; end if
+
+    maker = pc.touch(args[0], jumpName+".src")
+    if typeof(maker) == "string" then; print(maker); return; end if
+    file = pc.File(args[0]+"/"+jumpName+".src")
+    write.run(object, ["interop = get_custom_object()"+char(10), ">", file.path])
+    write.run(object, ["user = ""user"""+char(10), ">>", file.path])
+    write.run(object, ["pass = ""pass"""+char(10), ">>", file.path])
+    write.run(object, ["if params.len >= 2 then"+char(10), ">>", file.path])
+    write.run(object, ["user = params[0]"+char(10), ">>", file.path])
+    write.run(object, ["pass = params[1]"+char(10), ">>", file.path])
+    write.run(object, ["else if params.len == 1 then"+char(10), ">>", file.path])
+    write.run(object, ["user = params[0]"+char(10), ">>", file.path])
+    write.run(object, ["end if"+char(10), ">>", file.path])
+
+    write.run(object, ["ipscan = function(ip, routers)"+char(10), ">>", file.path])
+    write.run(object, ["router = get_router(ip)"+char(10), ">>", file.path])
+    write.run(object, ["for localIP in router.devices_lan_ip"+char(10), ">>", file.path])
+    write.run(object, ["if routers.indexOf(localIP) != null then continue"+char(10), ">>", file.path])
+    write.run(object, ["print(""<color=#cccccc>""+localIP)"+char(10), ">>", file.path])
+    write.run(object, ["routers.push(router.local_ip)"+char(10), ">>", file.path])
+    write.run(object, ["if get_router(localIP) then ipscan(localIP, routers)"+char(10), ">>", file.path])
+    write.run(object, ["end for"+char(10), ">>", file.path])
+    write.run(object, ["end function"+char(10), ">>", file.path])
+    
+    write.run(object, ["if params.len >= 2 and pass == ""deepscan"" then"+char(10), ">>", file.path])
+    write.run(object, ["ip = user"+char(10), ">>", file.path])
+    write.run(object, ["if not is_valid_ip(ip) then; print(""IP ""+ip+"" not found!""); return; end if"+char(10), ">>", file.path])
+    write.run(object, ["print("" "")"+char(10), ">>", file.path])
+    write.run(object, ["print(""<color=#cccccc>""+get_router(ip).local_ip)"+char(10), ">>", file.path])
+    write.run(object, ["ipscan(ip, [])"+char(10), ">>", file.path])
+    write.run(object, ["print("" "")"+char(10), ">>", file.path])
+    write.run(object, ["end if"+char(10), ">>", file.path])
+
+
+    write.run(object, ["interop.gshell = get_shell(user, pass)"+char(10), ">>", file.path])
+    write.run(object, ["interop.gcurrentUser = active_user"+char(10), ">>", file.path])
+    write.run(object, ["interop.glib = include_lib(user)"+char(10), ">>", file.path])
+    write.run(object, ["interop.gcryptTools = include_lib(user)"+char(10), ">>", file.path])
+
+    builder = object.build(file.path, args[0], false)
+    if builder.len then; print(builder); return; end if
+    //file.delete
+    file.set_content("")
+    // object.launch(args[0]+"/"+jumpName)
+    // return get_custom_object.gcurrentUser
+
+    //output that needs to be added in another function
+    // print(get_custom_object.gshell)
+    // print(get_custom_object.gcurrentUser)
+    // print(get_custom_object.gmetaxploit)
+    // print(get_custom_object.gcryptTools)
+
+end function
+
+jump.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+kill = {}
+kill.name = "kill"
+kill.args = "[PID/ALL]"
+kill.desc = "Kills a process."
+kill.full_desc = "This command will kill a process where [PID] is the id of the process.\nMultiple process ids can be given or all for closing all."
+kill.handler_types = ["start", "shell", "computer"]
+kill.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+
+    if args[0].lower == "all" then
+        for proc in object.show_procs.split(char(10))
+            PID = proc.split(" ")[1].to_int
+            output = object.close_program(PID)
+            if output == true then
+                print("Process " + PID + " closed")
+                continue
+            else if output then
+                print(output)
+                continue
+            end if
+        end for
+        return
+    end if
+
+    for proc in args
+        PID = proc.to_int
+        if typeof(PID) != "number" then
+            print("The PID must be a number\n" + self.show_help)
+            continue
+        end if
+
+        output = object.close_program(PID)
+        if output == true then
+            print("Process " + PID + " closed")
+            continue
+        else if output then
+            print(output)
+            continue
+        end if
+        print("Process " + PID + " not found")
+    end for
+
+end function
+
+kill.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+libs = {}
+libs.name = "libs"
+libs.args = "[N/A]"
+libs.desc = "Shows all imported libraries."
+libs.full_desc = "This command will show all imported libraries."
+libs.handler_types = ["start", "shell", "computer", "file"]
+libs.run = function(object, args)
+
+    info = do_style("INDEX"+" "+"LIBRARY"+" "+"PUBLICIP"+" "+"LOCALIP"+" "+"VERSION", "title")+"\n"+do_style("-----"+" "+"-------"+" "+"--------"+" "+"-------"+" "+"-------", "text")
+    for index in main_session.libList
+        line = do_style(index.key+" "+typeof(index["value"].lib).lower.replace("lib","")+" "+index["value"].publicIP+" "+index["value"].localIP+" "+index["value"].version, "text")
+        if index["value"].used then line = do_style(index.key+" "+typeof(index["value"].lib).lower.replace("lib","")+" "+index["value"].publicIP+" "+index["value"].localIP+" "+index["value"].version, "green", "static")
+        info = info+"\n"+line
+    end for
+    print("\n"+format_columns(info)+"\n")
+
+end function
+
+libs.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+load_theme = {}
+load_theme.name = "load-theme"
+load_theme.args = "[N/A]"
+load_theme.desc = "Reloads theme."
+load_theme.full_desc = "This command will load the theme from the settings file."
+load_theme.handler_types = ["start", "shell", "computer", "file"]
+load_theme.run = function(_, _)
+
+    loadSettings("theme")
+    txt = do_style("Theme reloaded!", "green", "static")
+    print(char(10)+txt+char(10))
+
+end function
+
+load_theme.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+loop = {}
+loop.name = "loop"
+loop.args = "[IP] [PORT] [MEM] [VULN] [IP/PASS]"
+loop.desc = "Loops over an exploit, open Map.exe to stop."
+loop.full_desc = "This command will loop over an exploit, where [IP] is the target IP,\n where [PORT] is the target port,\n where [MEM] is the memory address,\n where [VULN] is the vulnerable string,\n where [IP/PASS] is the IP for a bounce attack or a new password to inject."
+loop.handler_types = ["start", "shell", "computer", "file"]
+loop.run = function(object, args)
+
+    if not args or args.len < 4 then; self.show_help; return; end if
+    object = null
+    IP = args[0]
+    PORT = args[1].to_int
+    memAddress = args[2]
+    vulnString = args[3]
+    extra = "."
+    mapCheck = 1
+    netSession = main_session.MetaxploitLib.net_use(IP, PORT)
+    if args.len >= 5 then extra = args[4]
+    while mapCheck < 2 and object == null
+        mapCheck = get_shell.host_computer.show_procs.split("Map").len
+        if not netSession then; print("Could not connect to port: "+PORT); return; end if
+        object = netSession.dump_lib.overflow(memAddress, vulnString, extra)
+        objectType = typeof(object)
+        if objectType == "shell" then
+            localIP = object.host_computer.local_ip
+            user = userCheck(object.host_computer.File("/var"))
+        else if objectType == "computer" then
+            localIP = object.local_ip
+            user = userCheck(object.File("/var"))
+        else if objectType == "file" then
+            user = userCheck(object)
+            router = get_router(IP)
+            if router and not is_lan_ip(IP) then
+                if PORT == 0 or PORT == 8080 then
+                    localIP = router.local_ip
+                    ip = router.public_ip
+                else
+                    for port in router.used_ports
+                        if port.port_number == PORT then
+                            localIP = port.get_lan_ip
+                            break
+                        end if
+                    end for
+                end if
+            else if IP then
+                localIP = IP
+                ip = main_session.MetaxploitLibPublicIP
+            else
+                localIP = main_session.MetaxploitLibLocalIP
+                ip = main_session.MetaxploitLibPublicIP
+            end if
+        end if
+        wait(0.01)
+    end while
+    if object == null or objectType == "number" then return
+    main_session.objectList[main_session.objectList.len] = {"IP":IP, "objectType":objectType, "object":object, "localIP":localIP, "user":user}
+
+end function
+
+loop.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+
+// Color's used for output....eh colors are not all that great but oh well.
+dark_gray = "<color=#A0A0A0>"   // Dark Gray for secondary text
+light_gray = "<color=#D3D3D3>"  // Light Gray for highlights
+cyan = "<color=#00FFFF>"        // Cyan for info
+light_green = "<color=#90EE90>" // Light Green for success
+yellow = "<color=#FFFF00>"      // Yellow for warnings
+soft_blue = "<color=#ADD8E6>"   // Soft Blue for links
+soft_purple = "<color=#DDA0DD>" // Soft Purple for special messages
+dark_green = "<color=#006400>"  // Dark Green for directories
+brown = "<color=#8B4513>"       // Brown for archival files
+white = "<color=#FFFFFF>"       // White for main text
+red = "<color=#FF0000>"         // Red for root
+cend = "</color>"
+
+// Function for right padding a string to a specified width
+right_pad = function(text, width)
+    while text.len < width
+        text = text + " "
+    end while
+    return text
+end function
+
+format_byte = function(byte)
+    if byte < 1024 then
+        output = byte + " B"
+    else if byte < 1024 * 1024 then
+        output = (byte / 1024) + " KB"
+    else if byte < 1024 * 1024 * 1024 then
+        output = (byte / 1024 / 1024) + " MB"
+    else if byte < 1024 * 1024 * 1024 * 1024 then
+        output = (byte / 1024 / 1024 / 1024) + " GB"
+    else
+        output = (byte / 1024 / 1024 / 1024 / 1024) + " TB"
+    end if
+
+    return output
+end function
+
+// Function to get folders in the specified path
+get_folders = function(folder)
+    folders = []
+    for subFolder in folder.get_folders
+        folders.push(subFolder)
+    end for
+    return folders
+end function
+
+// Function to get files in the specified path
+get_files = function(folder)
+    files = []
+    for subFile in folder.get_files
+        files.push(subFile)
+    end for
+    return files
+end function
+
+// Function to display files and folders with color coding based on owner and type
+display_contents = function(folders, files)
+    output = ""
+    divider = "-----------------------------------------------------------------"  // Divider for sections
+    max_name_length = 22  // Maximum length for names
+    max_permission = 12  // Padding for each column
+    max_owner_length = 6
+    max_group_length = 4
+    max_size_length = 4
+    col_padding = 6
+
+    // Create header strings directly using color codes
+    header_name = "Name"
+    header_permissions = "Permissions"
+    header_owner = "Owner"
+    header_group = "Group"
+    header_size = "Size"
+
+    // Display total folders
+    output = output + "<b>Total Folders: " + folders.len + "</b></color>\n" + divider + "\n"
+    //output = output + right_pad(header_name, max_name_length) + right_pad(header_permissions, max_permission) + right_pad(header_owner, col_padding) + right_pad(header_group, col_padding) + header_size + "\n"  // Header for folders
+
+    // Add folders to output with color based on owner
+    for folder in folders
+
+        file_counter = "(<color=yellow>Files: " + get_files(folder).len + "</color>) "
+        folderName = right_pad(folder.name,10) + right_pad(file_counter,15) // Include file count in folder name
+        
+        if folder.owner == "root" and folder.group == "root" then
+            owner = red + folder.owner + cend
+            group = red + folder.group + cend
+        else if folder.owner == "guest" and folder.group == "guest" then
+            owner = soft_blue + folder.owner + cend
+            group = soft_blue + folder.group + cend
+        else
+            owner = cyan + folder.owner + cend
+            group = cyan + folder.group + cend
+        end if
+
+        owner = right_pad(owner,6)
+        group = right_pad(group,5)
+        size = folder.size
+        perms = right_pad(folder.permissions, max_permission)
+
+        // Adjusting padding for folder info
+        folder_info = cyan + folderName + cend + "<color=orange>" + perms + cend + owner + "  " + group + " " + format_byte(size.to_int)
+        
+        output = output + folder_info + "\n"
+    end for
+
+    // Add header for file section
+    output = output + "\n" + "<b>Total Files: " + files.len + "</b></color>\n" + divider + "\n"
+    //output = output + right_pad(header_name, max_name_length) + right_pad(header_permissions, col_padding) + right_pad(header_owner, col_padding) + right_pad(header_group, col_padding) + header_size + "\n"  // Header for files
+
+    // Add files to output with color based on owner and type
+    // Add files to output with color based on owner and type
+    for file in files
+
+        fileName = right_pad(file.name, max_name_length)
+        size = file.size
+        perms = right_pad(file.permissions, max_permission)
+
+        if file.owner == "root" and file.group == "root" then
+            owner = red + file.owner + cend
+            group = red + file.group + cend
+        else if file.owner == "guest" and file.group == "guest" then
+            owner = soft_blue + file.owner + cend
+            group = soft_blue + file.group + cend
+        else
+            owner = cyan + file.owner + cend
+            group = cyan + file.group + cend
+        end if
+
+        // Adjusting padding for file info
+        file_info = cyan + fileName + cend + "<color=orange>" + perms + cend + owner + "  " + group + " " + format_byte(size.to_int)
+        
+        output = output + file_info + "\n"
+    end for
+
+    // Print the formatted output
+    print(output)
+end function
+
+ls = {}
+ls.name = "ls"
+ls.args = "[PATH]"
+ls.desc = "Lists files inside a directory."
+ls.full_desc = "This command will list all the files inside a directory,\n where [PATH] is the path to the directory."
+ls.handler_types = ["start", "shell", "computer", "file"]
+ls.run = function(object, args)
+
+	computer = get_shell.host_computer
+
+
+    if not args then
+		folderPath = current_path
+	else if args.len > 0 then
+    	folderPath = args[0]
+    end if
+
+    folder = computer.File(folderPath)
+    if folder == null then
+        print("ls: No such file or directory")
+    else
+        if not folder.has_permission("r") then
+            print("ls: permission denied")
+        else
+            // Get both folders and files
+            folders = get_folders(folder)
+            files = get_files(folder)
+
+            // Display the contents using the display function with colors and classy output
+            display_contents(folders, files)
+        end if
+    end if
+end function
+
+ls.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+md5_hash = {}
+md5_hash.name = "md5"
+md5_hash.args = "[STRING]"
+md5_hash.desc = "Hashes a string with the md5 hash algorithm."
+md5_hash.full_desc = "This command will hash a string with the md5 hash algorithm where [STRING] is the string to hash."
+md5_hash.handler_types = ["start", "shell", "computer", "file"]
+md5_hash.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    print(char(10)+md5(args[0])+char(10))
+
+end function
+
+md5_hash.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+mkdir = {}
+mkdir.name = "mkdir"
+mkdir.args = "[PATH]"
+mkdir.desc = "Creates a directory."
+mkdir.full_desc = "This command will create a directory where [PATH] is the path of the directory."
+mkdir.handler_types = ["start", "shell", "computer"]
+mkdir.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: mkdir
+    for pathFile in args
+        computer = object
+        if pathFile == "" then
+            self.show_help()
+            return
+        end if
+
+        pathParent = parent_path(pathFile)
+        existFile = computer.File(pathFile)            
+        if pathParent == pathFile then
+            pathParent = current_path
+        end if
+        
+        parent = computer.File(pathParent)
+        if parent == null then
+            print("mkdir: " + pathParent + " not found")
+        else if existFile != null then
+            print("mkdir: " + existFile.path + " file exists")
+        else if not parent.has_permission("w") then
+            print("mkdir: permission denied")
+        else
+            arrayPath = pathFile.split("/")
+            output = computer.create_folder(parent.path, arrayPath[arrayPath.len - 1])
+            if output != null and output != 1 then
+                print(output)
+            end if 
+        end if
+    end for
+
+end function
+
+mkdir.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+msfconsole = {}
+msfconsole.name = "msfconsole"
+msfconsole.args = "[N/A]"
+msfconsole.desc = "Starts a listiner for incomming rshells."
+msfconsole.full_desc = "This command will start an rshell listiner."
+msfconsole.handler_types = ["start", "shell", "computer", "file"]
+msfconsole.run = function(object, args)
+
+    if not main_session.MetaxploitLib then
+        print("metaxploit.so not found!")
+        return
+    end if
+
+    getNetcatConnections()
+    input = null
+    while input != "exit"
+        input = user_input("<u>meterpreter</u> > ")
+
+        //main_session.netcatList
+        if input.split(" ")[0] == "get" or input == "refresh" then
+            getNetcatConnections()
+        else if input.split(" ")[0] == "list" or input.split(" ")[0] == "sessions" then
+            output = "\n"
+            for netcatItem in main_session.netcatList
+                // print(GREEN+"<b>Shell ("+netcatItem.key+")</b>")
+                color = do_style(netcatItem.value["user"], "logo", "static")
+                if netcatItem.value["user"] == "root" then color = do_style(netcatItem.value["user"], "logo", "static")
+                // print(YELLOW+"User: "+color+netcatItem.value["user"])
+                // print(YELLOW+"Public IP: "+LIGHT_BLUE+netcatItem.value["IP"])
+                // print(YELLOW+"Local IP: "+ORANGE+netcatItem.value["localIP"])
+                output = output+do_style("("+netcatItem.key+")", "logo", "static")+do_style(" [*] ", "arg")+do_style(netcatItem.value["localIP"]+" Connected from "+netcatItem.value["IP"]+" as ", "logo", "static")+color+"\n"
+            end for
+            print(format_columns(output))
+            print(" ")
+        else if input.split(" ")[0] == "use" then
+            if input.split(" ").len() <= 1 then continue
+            index = input.split(" ")[1].to_int
+            if not main_session.netcatList.hasIndex(index) then
+                print("Index not found!")
+            else
+                main_session.object = main_session.netcatList[index].object
+                main_session.handlerType = typeof(main_session.netcatList[index].object)
+                main_session.pub_ip = main_session.netcatList[index].IP
+                main_session.loc_ip = main_session.netcatList[index].localIP
+                main_session.current_user = main_session.netcatList[index].user
+                break
+            end if
+
+        else if input.split(" ")[0] == "loop" or input.split(" ")[0] == "listen" or input.split(" ")[0] == "run" or input.split(" ")[0] == "start" then
+            print("execute the map program to exit")
+            print(do_style("Listining for connections on "+main_session.MetaxploitLibPublicIP+"...", "arg")+"\n")
+            listLen = main_session.netcatList.len
+            while true
+                getNetcatConnections(false)
+                if main_session.netcatList.len > listLen then
+                    listLen = main_session.netcatList.len
+                    line = do_style("[*] ", "arg")+do_style(main_session.netcatList[main_session.netcatList.len-1].localIP+" Connected from "+main_session.netcatList[main_session.netcatList.len-1].IP+" as "+main_session.netcatList[main_session.netcatList.len-1].user, "logo", "static")
+                    print(line)
+                end if
+                if get_shell.host_computer.show_procs.split("Map").len > 1 then
+                    break
+                end if
+            end while
+        else if input.split(" ")[0] == "clear" then
+            clear_screen
+        else if input.split(" ")[0] == "help" then
+            helpPage = {
+                "help":{"arguments":"N/A", "description":"Displays the help page."},
+                "clear":{"arguments":"N/A", "description":"Clears the screen."},
+                "get/refresh":{"arguments":"N/A", "description":"Updates connected shells list."},
+                "list/sessions":{"arguments":"N/A", "description":"Shows a list of connected shells."},
+                "loop/listen/run/start":{"arguments":"N/A", "description":"Loop that updates connected shells list."},
+                "use":{"arguments":"[INDEX]", "description":"Uses an index from the list."},
+                "exit":{"arguments":"N/A", "description":"Exits the msfconsole."},
+            }
+            str = do_style("COMMAND ARGUMENTS DESCRIPTION", "title")+"\n"
+            str = str+do_style("------- --------- -----------", "text")+"\n"
+            print(" ")
+            for line in helpPage
+                str = str+do_style(line.key+" "+line.value["arguments"]+" "+line.value["description"].replace(" ","|"), "text")+"\n"
+            end for
+            print(format_columns(str).replace("\|"," "))
+            print(" ")
+        else if input != "exit" then
+            print("Command "+input+" not found! Type help for help.")
+        end if
+        wait(0.01)
+    end while
+
+end function
+
+msfconsole.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+msfvenom = {}
+msfvenom.name = "msfvenom"
+msfvenom.args = "[IP] [PORT] [PROC]"
+msfvenom.desc = "Starts a reverse shell."
+msfvenom.full_desc = "This command will start a reverse shell on the target,\n where [IP] is the IP of the rshell server,\n where [PORT] is the port of the rshell server,\n where [PROC] is the process's name."
+msfvenom.handler_types = ["start", "shell", "computer", "file"]
+msfvenom.run = function(object, args)
+
+    if not args or args.len != 3 then; self.show_help; return; end if
+    if not main_session.MetaxploitLib then
+        print("metaxploit.so not found!")
+        return
+    end if
+
+    ip = args[0]
+    port = args[1].to_int
+    procName = args[2]
+    if typeof(port) != "number" then; self.show_help; return; end if
+
+    main_session.MetaxploitLib.rshell_client(ip, port, procName)
+    line1 = "\n"+"rshell started at "+main_session.MetaxploitLibPublicIP+" on "+main_session.MetaxploitLibLocalIP+" as "+procName+"\n"
+    print(line1)
+    print("Connected to server "+ip+" on port "+port)
+
+end function
+
+msfvenom.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+mv = {}
+mv.name = "mv"
+mv.args = "[PATH] [DESTPATH]"
+mv.desc = "Moves a file or directory."
+mv.full_desc = "This command will move a file or directory where [PATH] is the path of the file or directory and,\n [DESTPATH] the path where the file or directory should be moved to."
+mv.handler_types = ["start", "shell", "computer", "file"]
+mv.run = function(object, args)
+
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")   
+    //command: mv
+    if not args or args.len != 2 then
+        self.show_help
+    else
+        origFile = args[0]
+        destFolder = args[1]
+        file = findFile(object, origFile)
+        if file == null then
+            print("mv: can't find " + origFile)
+        else
+            newName = ""
+            folder = findFile(object, destFolder)
+            if folder == null then
+                //Check if the user wants to put a new name.
+                pathParent = parent_path(destFolder)    
+                if pathParent == destFolder then			
+                    newName = destFolder
+                    destFolder = file.parent.path
+                    file.move(destFolder, newName)
+                else
+                    folder = findFile(object, pathParent)
+                    newName = destFolder[destFolder.len - (destFolder.len - pathParent.len):]			
+                    if newName[0] == "/" then
+                        newName = newName[1:]
+                        file.move(pathParent, newName)
+                    end if
+                    if folder == null then				
+                        print("mv: can't copy file. " + destFolder + " doesn't exist.")
+                    end if			
+                end if
+            else if folder != null then        
+                //Check if is trying to copy the file on itself. Ignored.
+                if parent_path(file.path) != parent_path(folder.path) or file.name != folder.name then
+                    finalDest = folder.path
+                    if(newName.len == 0) then
+                        newName = file.name
+                    end if
+                    if not folder.is_folder then			
+                        finalDest = parent_path(file.path)
+                        newName = folder.name
+                    end if
+                    if parent_path(file.path) == parent_path(folder.path) and newName != file.name then
+                        file.rename(newName)
+                    else
+                        file.move(finalDest, newName)
+                    end if
+                end if
+            end if
+        end if
+    end if
+
+end function
+
+mv.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+nmap = {}
+nmap.name = "nmap"
+nmap.args = "[IP/RANDOM]"
+nmap.desc = "Scans a network for open ports."
+nmap.full_desc = "Scans a network for open ports where [IP/RANDOM] is the IP or a random IP to scan."
+nmap.handler_types = ["start", "shell", "computer", "file"]
+nmap.run = function(object, args)
+
+    nmap_scan(args)
+
+end function
+
+nmap.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+
+nsLookup = {}
+nsLookup.name = "nslookup"
+nsLookup.args = "[DOMAIN]"
+nsLookup.desc = "Returns the IP of a domain."
+nsLookup.full_desc = "This command will return the IP of a domain where [DOMAIN] is the domain."
+nsLookup.handler_types = ["start", "shell", "computer", "file"]
+nsLookup.run = function(object, args)
+
+    if not args then; show_help("nslookup", self.args, self.full_desc, self.handler_types); return; end if
+    nslookup_info = do_style("IP", "title")+do_style(": "+nslookup(args[0]), "text")
+    print("\n"+nslookup_info+"\n")
+
+end function
+
+nsLookup.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+passwd = {}
+passwd.name = "passwd"
+passwd.args = "[USER] [PASSWORD]"
+passwd.desc = "Changes the password of a user."
+passwd.full_desc = "This command will change the password of a user where [USER] is the user,\n and [PASSWORD] is the new password."
+passwd.handler_types = ["start", "shell", "computer"]
+passwd.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: passwd
+
+    inputMsg = "Changing password for user " + args[0]
+    inputPass = args[1]
+
+    print(inputMsg)
+    output = object.change_password(args[0], inputPass)
+    if output == true then; print("password modified OK"); return; end if
+    if output then; print(output); return; end if
+    print("Error: password not modified")
+
+end function
+
+passwd.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+
+string.color = function(hex)
+	return "<color=" + hex + ">" + self + "</color>"
+end function
+
+bar = function(n, bar_length = 35) // percentage number
+	fill_count = ceil(n / bar_length * 10)
+	empty_count = bar_length - fill_count
+	
+	fill_bar = "#"*fill_count
+	empty_bar = "-"*empty_count
+	
+	bar = fill_bar.color("#21bcff") + empty_bar.color("#032e41")
+	return bar
+end function
+//command: ps
+computer = get_shell.host_computer
+
+string.color = function(hex)
+	return "<color=" + hex + ">" + self + "</color>"
+end function
+
+bar = function(n, bar_length = 35) // percentage number
+	fill_count = ceil(n / bar_length * 10)
+	empty_count = bar_length - fill_count
+	
+	fill_bar = "#"*fill_count
+	empty_bar = "-"*empty_count
+	
+	bar = fill_bar.color("#21bcff") + empty_bar.color("#032e41")
+	return bar
+end function
+
+cpu_load = 0.0
+mem_load = 0.0
+
+// convert ps output to a list
+tasks = []
+for line in computer.show_procs.split("\n")[1:]
+	line = line.split(" ")
+	task = {}
+	cpu_load = cpu_load + line[2][:-1].val
+	mem_load = mem_load + line[3][:-1].val
+	
+	task["user"] = line[0].color("#fbfbfb")
+	if line[0] == "root" then
+		task["user"] = line[0].color("#ff4b4b")
+	end if
+	task["pid"] = line[1].color("#20ff98")
+	task["cpu"] = line[2].color("#21bcff")
+	task["mem"] = line[3].color("#21bcff")
+	task["command"] = line[4].color("#baff50")
+	
+	tasks.push task
+end for
+
+// render
+render_bar = function(bar_name, bar_load_value)
+	r = ""
+	r = r + (bar_name + ": [").color("#fbfbfb")
+	r = r + bar(bar_load_value)
+	r = r + "]==[ ".color("#fbfbfb")
+	r = r + (bar_load_value + "%").color("#21bcff")
+	r = r + " ]".color("#fbfbfb")
+	
+	return r
+end function
+
+ps = {}
+ps.name = "ps"
+ps.args = "[N/A]"
+ps.desc = "Shows all running processes on a computer."
+ps.full_desc = "This command will show all running processes on a computer."
+ps.handler_types = ["start", "shell", "computer"]
+ps.run = function(object, args)
+	computer = get_shell.host_computer
+	cpu_load = 0.0
+	mem_load = 0.0
+
+	// convert ps output to a list
+	tasks = []
+	for line in computer.show_procs.split("\n")[1:]
+		line = line.split(" ")
+		task = {}
+		cpu_load = cpu_load + line[2][:-1].val
+		mem_load = mem_load + line[3][:-1].val
+	
+		task["user"] = line[0].color("#fbfbfb")
+		if line[0] == "root" then
+			task["user"] = line[0].color("#ff4b4b")
+		end if
+		task["pid"] = line[1].color("#20ff98")
+		task["cpu"] = line[2].color("#21bcff")
+		task["mem"] = line[3].color("#21bcff")
+		task["command"] = line[4].color("#baff50")
+	
+		tasks.push task
+	end for
+	
+	print render_bar("cpu_usage", cpu_load)
+	print render_bar("mem_usage", mem_load)
+	print ""
+
+	// print ps with colors
+	pps = []
+	header = task.indexes
+	for i in header.indexes	
+		header[i] = header[i].upper.color("#9d9d9d")
+	end for
+	pps.push header.join(" ")
+
+	for task in tasks
+		pps.push(task.values.join(" "))
+	end for
+
+	print(format_columns(pps.join("\n")))
+end function
+
+ps.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+shellPut = {}
+shellPut.name = "put"
+shellPut.args = "[HOSTPATH] [DESPATH]"
+shellPut.desc = "Uploads a file."
+shellPut.full_desc = "This command will upload a file where [HOSTPATH] is the path to the file or directory, and [DESTPATH] is the path to the directory to put the file."
+shellPut.handler_types = ["start", "shell"]
+shellPut.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    if typeof(object) == "shell" then
+        hostPath = args[0]
+        filePath = args[1]
+        if filePath == "" or hostPath == "" then; self.show_help; return; end if
+        err = get_shell.scp(hostPath, filePath, object)
+    else if typeof(object) == "ftpshell" then
+        filePath = args[0]
+        hostPath = args[1]
+        err = get_shell.put(hostPath, filePath, object)
+    end if
+
+end function
+
+shellPut.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+returnStart = {}
+returnStart.name = "return"
+returnStart.args = "[N/A]"
+returnStart.desc = "Returns to the starting point."
+returnStart.full_desc = "This command will return starting point."
+returnStart.handler_types = ["start", "shell", "computer", "file"]
+returnStart.run = function(object, _)
+
+    main_session.object = get_shell
+    main_session.handlerType = "start"
+    main_session.pub_ip = get_shell.host_computer.public_ip
+    main_session.loc_ip = get_shell.host_computer.local_ip
+    main_session.current_user = active_user
+    print("Back at starting point.")
+
+end function
+
+returnStart.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+rm = {}
+rm.name = "rm"
+rm.args = "[PATH]"
+rm.desc = "Removes a file or directory."
+rm.full_desc = "This command will remove a file or directory where [PATH] is the path to the file or directory."
+rm.handler_types = ["start", "shell", "computer", "file"]
+rm.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    //command: rm
+    isRecursive = 0
+    if args[0] == "-r" then
+        if args.len == 1 then; self.show_help; return; end if
+        isRecursive = 1
+        args = args[1:]
+    end if
+    for pathFile in args
+        file = findFile(object, pathFile)
+        if file == null then; print("rm: file not found: "+pathFile); return; end if
+        if not file.has_permission("w") then; print("rm: permission denied"); return; end if
+
+        if file.is_folder == 1 and isRecursive == 0 then
+            print("rm: " + file.name + " is a directory")
+        else
+            output = file.delete
+            if len(output) or output == null then print(output)
+        end if
+    end for
+
+end function
+
+rm.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+saveSettings = {}
+saveSettings.name = "save-settings"
+saveSettings.args = "[N/A]"
+saveSettings.desc = "Saves settings."
+saveSettings.full_desc = "This command will save all settings to the settings file."
+saveSettings.handler_types = ["start", "shell", "computer", "file"]
+saveSettings.run = function(_, _)
+
+    configFile = get_shell.host_computer.File("/home/"+active_user+"/Config/Viper.conf")
+    if active_user() == "root" then configFile = get_shell.host_computer.File("/root/Config/Viper.conf")
+    if not configFile then return
+    settings = {}
+    settings.theme = user_session.theme
+    settings.vars = main_session.vars
+    configFile.set_content(toJSON(settings))
+    txt = do_style("Settings saved!", "green", "static")
+    print(char(10)+txt+char(10))
+
+end function
+
+saveSettings.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+scanlib = {}
+scanlib.name = "scanlib"
+scanlib.args = "[PATH]"
+scanlib.desc = "Returns library version."
+scanlib.full_desc = "This command will return the version of a library,\n where [PATH] is the path to the library.\nIt's important to use the correct metaxploit.so."
+scanlib.handler_types = ["start", "shell", "computer", "file"]
+scanlib.run = function(object, args)
+
+    if not args then; show_help(self.name, self.args, self.full_desc, self.handler_types); return; end if
+    if not main_session.MetaxploitLib then; print("Metaxploit not found!"); return; end if
+
+    lib = main_session.MetaxploitLib.load(args[0])
+    if not lib then; print("Unable to load library!"); return; end if
+    libName = do_style("Name", "title")+do_style(": "+lib.lib_name, "text")
+    libVersion = do_style("Version", "title")+do_style(": "+lib.version, "text")
+    print(libName)
+    print(libVersion)
+
+end function
+
+scanlib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+secure = {}
+secure.name = "secure"
+secure.args = "[-home/-server]"
+secure.desc = "Secures a pc or server."
+secure.full_desc = "This command will secure a pc or server where [-home/-server] is a homePC or server."
+secure.handler_types = ["start", "shell", "computer", "file"]
+secure.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+    if userCheck(object) != "root" then; print("Root is required!"); return; end if
+
+    print("If you are running this from your homePC, please use -home")
+    if user_input("Continue? (y/n): ").lower != "y" then
+        print("Aborted")
+        return
+    end if
+
+    if args[0] == "-home" then
+        rootFS = findFile(object, "/")
+        rootFS.chmod("o-rwx", true)
+        rootFS.chmod("g-rwx", true)
+        rootFS.chmod("u-rwx", true)
+        rootFS.set_group("root", true)
+        rootFS.set_owner("root", true)
+
+        whitelisted = [
+            "/bin/sudo",
+            "/usr/bin/Terminal.exe",
+            "/usr/bin/AdminMonitor.exe",
+            "/usr/bin/ConfigLan.exe",
+            "/usr/bin/Mail.exe",
+            "/usr/bin/Browser.exe",
+            "/usr/bin/Notepad.exe",
+            "/usr/bin/Settings.exe",
+            "/usr/bin/Manual.exe",
+            "/usr/bin/Chat.exe",
+            ]
+
+        for program in whitelisted
+            file = findFile(object, program)
+            if file then file.chmod("g+x")
+        end for
+    else if args[0] == "-server" then
+        rootFS = findFile(object, "/")
+        rootFS.chmod("o-rwx", true)
+        rootFS.chmod("g-rwx", true)
+        rootFS.chmod("u-rwx", true)
+        rootFS.set_group("root", true)
+        rootFS.set_owner("root", true)
+    else
+        print("<color=red>Invalid arguments!</color>")
+        return
+    end if
+    print("<color=green>Filesystem secured!</color>")
+
+end function
+
+secure.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+sha256 = {}
+sha256.name = "sha256"
+sha256.args = "[STRING]"
+sha256.desc = "Hashes a string with the sha256 algorithm."
+sha256.full_desc = "This command will use the sha256 algorithm to has a string where [STRING] is the string."
+sha256.handler_types = ["start", "shell", "computer", "file"]
+sha256.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    print(" ")
+    sha256_hash(args)
+    print(" ")
+
+end function
+
+sha256.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+shell = {}
+shell.name = "shell"
+shell.args = "[N/A]"
+shell.desc = "Starts a shell, Viper will quit!!"
+shell.full_desc = "This command will start a shell, Viper will quit!!"
+shell.handler_types = ["start", "shell"]
+shell.run = function(object, args)
+
+    object.start_terminal
+
+end function
+
+shell.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+sniff = {}
+sniff.name = "sniffer"
+sniff.args = "(-save)"
+sniff.desc = "Starts a sniffer."
+sniff.full_desc = "This command will start a sniffer where (-save) is wether or not to save the encode.src."
+sniff.handler_types = ["start", "shell", "computer", "file"]
+sniff.run = function(object, args)
+
+    if not main_session.MetaxploitLib then; print("Error: Can't find metaxploit library."); return; end if
+    print("Starting listen...\nWaiting to incoming data.")
+    save = false
+    if args and args[0] == "-save" then save = true
+    output = main_session.MetaxploitLib.sniffer(save)
+    if not output then; print("Unknown error: can't start to listening"); return; end if
+    print(output)
+
+end function
+
+sniff.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+ssh = {}
+ssh.name = "ssh"
+ssh.args = "[USER@PASSWORD] [IP] (PORT)"
+ssh.desc = "Connects to a service using ssh."
+ssh.full_desc = "This command will connects to a server using ssh where [USER@PASSWORD] is the user and password,\n where [IP] is the IP of ther server,\n where (PORT) is an optional port."
+ssh.handler_types = ["start", "shell"]
+ssh.run = function(object, args)
+
+    if not args or args.len < 2 then; self.show_help; return; end if
+    
+    //Command: ssh
+    credentials = args[0].split("@")
+    if credentials.len < 2 then; self.show_help; return; end if
+    user = credentials[0]
+    password = credentials[1]
+
+    port = 22
+    // params is a list of strings, so you have to convert it to integer, which is what connect_service accepts.
+    if args.len == 3 then port = args[2].to_int
+    if typeof(port) != "number" then; print("Invalid port: " + port); return; end if
+    print("Connecting...")
+
+    remoteShell = object.connect_service(args[1], port, user, password, "ssh")
+    if typeof(remoteShell) != "shell" then; print("Could not connect!"); return; end if
+    if remoteShell then
+        print("Connected!")
+        main_session.pub_ip = remoteShell.host_computer.public_ip
+        main_session.handlerType = typeof(remoteShell)
+        main_session.object = remoteShell
+        main_session.loc_ip = remoteShell.host_computer.local_ip
+        main_session.current_user = user
+        {"IP":remoteShell.host_computer.public_ip, "objectType":typeof(remoteShell), "object":remoteShell, "localIP":remoteShell.host_computer.local_ip, "user":user}
+    else 
+        print("connection failed")
+    end if
+
+end function
+
+ssh.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+sudo = {}
+sudo.name = "sudo"
+sudo.args = "[USER] [PASS] (JUMPPATH)"
+sudo.desc = "Changes the shell to another user."
+sudo.full_desc = "This command will change the shell to another user where [USER] is the user,\n where [PASS] is the password,\n where (JUMPPATH) is the path to the jumpfile."
+sudo.handler_types = ["start", "shell"]
+sudo.run = function(object, args)
+
+    if not args or args.len == 1 then; self.show_help; return; end if
+
+    if main_session.handlerType == "start" and args.len >= 2 then
+        newObject = get_shell(args[0], args[1])
+        if not newObject then return null
+        main_session.pub_ip = newObject.host_computer.public_ip
+        main_session.handlerType = "start"
+        main_session.object = newObject
+        main_session.loc_ip = newObject.host_computer.local_ip
+        main_session.current_user = userCheck(newObject.host_computer.File("/var"))
+        return
+    else if main_session.handlerType == "shell" and args.len >= 3 then
+        fileObject = object.host_computer.File("/var")
+        file = findFile(fileObject, args[2])
+        if file then
+
+            cargo = get_custom_object
+            clearInterface(cargo)
+            object.launch(args[2], args[0]+" "+args[1])
+
+            if not hasIndex(cargo, "gshell") then
+                print("Jump file corrupted!")
+                clearInterface(cargo)
+                return
+            end if
+
+            if @cargo.gshell == null then
+                print("Wrong password!")
+                clearInterface(cargo)
+                return
+            end if
+
+            if not host_computer(@cargo.gshell) then
+                print("AV detected injection!")
+                clearInterface(cargo)
+                return
+            end if
+
+            newObject = cargo.gshell
+            main_session.pub_ip = newObject.host_computer.public_ip
+            main_session.handlerType = typeof(newObject)
+            main_session.object = newObject
+            main_session.loc_ip = newObject.host_computer.local_ip
+            main_session.current_user = userCheck(newObject.host_computer.File("/var"))
+            clearInterface(cargo)
+            return
+        end if
+        print("Jump file does not exist!")
+        return
+    end if
+    self.show_help
+    return
+
+end function
+
+sudo.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+targets = {}
+targets.name = "targets"
+targets.args = "[N/A]"
+targets.desc = "Shows all available targets."
+targets.full_desc = "This command will show all available targets."
+targets.handler_types = ["start", "shell", "computer", "file"]
+targets.run = function(object, args)
+
+    show_targets()
+
+end function
+
+targets.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+makeFile = {}
+makeFile.name = "touch"
+makeFile.args = "[PATH]"
+makeFile.desc = "Creates a file."
+makeFile.full_desc = "This command will make a file where [PATH] is the path of the file.\nYou can create multiple files at once."
+makeFile.handler_types = ["start", "shell", "computer"]
+makeFile.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer
+    //command: touch
+
+    for pathFile in args
+        pathParent = parent_path(pathFile)
+        computer = object
+
+        if pathParent == pathFile then
+            pathParent = current_path
+        end if
+
+        parent = computer.File(pathParent)
+
+        if not parent then; print("touch: " + pathParent + " not found"); return; end if
+        if not parent.has_permission("w") then; print("touch: permission denied"); return; end if
+
+        arrayPath = pathFile.split("/")
+        output = computer.touch(parent.path, arrayPath[arrayPath.len - 1])
+        if output and output != 1 then print(output)
+    end for
+
+end function
+
+makeFile.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+use = {}
+use.name = "use"
+use.args = "[INDEX]"
+use.desc = "Uses a selected target."
+use.full_desc = "This command will show all use a target where [INDEX] is the selected target."
+use.handler_types = ["start", "shell", "computer", "file"]
+use.run = function(object, args)
+
+    if not args then; show_help(commands.use.args, commands.use.full_desc, commands.use.handler_types); return; end if
+    index = args[0].to_int
+    if not main_session.objectList.hasIndex(index) then; print("Index not found!"); return; end if
+
+    add_session({"IP":main_session.pub_ip, "objectType":main_session.handlerType, "object":main_session.object, "localIP":main_session.loc_ip, "user":main_session.current_user})
+
+    info = main_session.objectList[index]
+    main_session.object = info.object
+    main_session.handlerType = info.objectType
+    main_session.pub_ip = info.IP
+    main_session.loc_ip = info.localIP
+    main_session.current_user = info.user
+
+end function
+
+use.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+uselib = {}
+uselib.name = "uselib"
+uselib.args = "[INDEX]"
+uselib.desc = "Select a library."
+uselib.full_desc = "This command will select a library where [INDEX] is the index of the library."
+uselib.handler_types = ["start", "shell", "computer", "file"]
+uselib.run = function(object, args)
+
+    if not args then; self.show_help; return; end if
+    index = args[0].to_int
+    if not main_session.libList.hasIndex(index) then; print("Index not found!"); return; end if
+    for libMap in main_session.libList
+        if typeof(libMap["value"].lib) == typeof(main_session.libList[index].lib) and libMap["value"].used then main_session.libList[libMap.key].used = 0
+    end for
+    main_session[typeof(main_session.libList[index].lib)+"Version"] = main_session.libList[index].version
+    main_session[typeof(main_session.libList[index].lib)+"PublicIP"] = main_session.libList[index].publicIP
+    main_session[typeof(main_session.libList[index].lib)+"LocalIP"] = main_session.libList[index].localIP
+    main_session[typeof(main_session.libList[index].lib)] = main_session.libList[index].lib
+    main_session.libList[index].used = 1
+
+end function
+
+uselib.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+vars = {}
+vars.name = "vars"
+vars.args = "[N/A]"
+vars.desc = "Lists all the available variables."
+vars.full_desc = "This command will list all the variabels."
+vars.handler_types = ["start", "shell", "computer", "file"]
+vars.run = function(object, args)
+
+    for item in main_session.vars
+        print(item["key"]+": "+item["value"])
+    end for
+
+end function
+
+vars.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+whoisLookup = {}
+whoisLookup.name = "whois"
+whoisLookup.args = "[IP]"
+whoisLookup.desc = "Returns whois information."
+whoisLookup.full_desc = "This command will show whois information about an IP address,\n where [IP] is the IP address."
+whoisLookup.handler_types = ["start", "shell", "computer", "file"]
+whoisLookup.run = function(object, args)
+
+    if not args then; show_help("nslookup", self.args, self.full_desc, self.handler_types); return; end if
+    info = ""
+    for line in whois(args[0]).split("\n")
+        info = info+do_style(line.split(": ")[0], "title")+do_style(": "+line.split(": ")[1], "text")+"\n"
+    end for
+    print("\n"+info)
+
+end function
+
+whoisLookup.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+wipe = {}
+wipe.name = "wipe"
+wipe.args = "(-y)"
+wipe.desc = "Wipes a machine."
+wipe.full_desc = "This command will wipe a machine where (-y) will skip the confirmation check."
+wipe.handler_types = ["start", "shell", "computer", "file"]
+wipe.run = function(object, args)
+
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+
+    if not args or args[0] != "-y" then
+        if user_input("Do you really want to wipe this system? (y/n): ").lower != "y" then
+            print("Aborted.")
+            return
+        end if
+    end if
+
+    files = ["/etc", "/lib", "/sys", "/root", "/home", "/var", "/bin", "/usr", "/boot"]
+
+    wipe_folder = function(path)
+        print("Removing "+path+"...")
+        file = findFile(object, path)
+        if file then
+            if file.has_permission("w") then
+                file.delete
+            else
+                print("No permission to "+file.name+"!")
+            end if
+        else
+            print("File "+path+" does not exist!")
+        end if
+        wait(0.5)
+    end function
+    
+    for filePath in files
+        wipe_folder(filePath)
+    end for
+    print("<color=green>System wipe done!</color>")
+
+end function
+
+wipe.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+write = {}
+write.name = "write"
+write.args = "[CONT] [>>/>] [PATH]"
+write.desc = "Writes to a file."
+write.full_desc = "This command will write to a file where [CONT] is the content you want to write to the file,\n where [>>/>] is the operator (>>) for appending to the file, (>) for replacing the contents,\n where [PATH] is the path of the file."
+write.handler_types = ["start", "shell", "computer", "file"]
+write.run = function(object, args)
+
+    if not args or args.len < 3 then; self.show_help; return; end if
+    if typeof(object) == "shell" then object = object.host_computer.File("/var")
+    if typeof(object) == "computer" then object = object.File("/var")
+
+    newContent = args[0]
+    operator = args[1]
+    file = findFile(object, args[2])
+    if not file then; print("File: "+args[2]+" not found!"); return; end if
+
+    if operator == ">" then
+        file.set_content(newContent)
+    else if operator == ">>" then
+        file.set_content(file.get_content+newContent)
+    end if
+
+end function
+
+write.show_help = function()
+    show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+commands = {
+    "help":help, "clear":clear, "credits":credits, "nmap":nmap, "exploitscan":exploitscan, "exploit":exploit, "targets":targets, "use":use, "back":back, "deltarget":deltarget, "ls":ls,
+    "cat":cat, "ps":ps, "corruptlogs":corruptlogs, "buffer":buffer, "nslookup":nsLookup, "whois":whoisLookup, "scanlib":scanlib, "scanlib":scanlib, "addobject":addobject, "fs":fs,
+    "exec":exec, "kill":kill, "mv":mv, "cp":cp, "rm":rm, "touch":makeFile, "mkdir":mkdir, "write":write,"compile":compile, "chmod":chmodFile, "chown":chown, "chgrp":chgrp, "passwd":passwd,
+    "adduser":adduser, "deluser":deluser, "groups":getGroups, "addgroup":addgroup, "delgroup":delgroup, "get":shellGet, "put":shellPut, "sniffer":sniff, "secure":secure, "wipe":wipe,
+    "addvar":addvar, "delvar":delvar, "vars":vars, "gpg":gpg, "md5":md5_hash, "sha256":sha256, "airmon":airmonitor,"iwlist":iwlist, "aireplay":airkick, "aircrack":crack_cap, "shell":shell,
+    "loop":loop, "ssh":ssh, "sudo":sudo, "jump":jump, "msfvenom":msfvenom, "msfconsole":msfconsole, "grab":grab, "findlib":findlib, "deepscan":deepscan, "apt-get":aptget, "libs":libs,
+    "uselib":uselib, "getlib":getlib, "dellib":dellib, "crack":crack, "getviper":getviper, "exit":do_exit, "save-settings":saveSettings, "load-theme":load_theme, "return":returnStart,
+    "echo":echo, "ipgen":ipgen,
+}
+
+main_session = {
+    "exit":false,
+    "version":"3.0",
+    "MetaxploitLib":null,
+    "MetaxploitLibPublicIP":null,
+    "MetaxploitLibLocalIP":null,
+    "MetaxploitLibVersion":null,
+    "cryptoLib":null,
+    "cryptoLibPublicIP":null,
+    "cryptoLibLocalIP":null,
+    "cryptoLibVersion":null,
+    "aptclientLib":null,
+    "aptclientLibPublicIP":null,
+    "aptclientLibLocalIP":null,
+    "aptclientLibVersion":null,
+    "object":get_shell,
+    "handlerType":"start",
+    "pub_ip":get_shell.host_computer.public_ip,
+    "loc_ip":get_shell.host_computer.local_ip,
+    "current_user":active_user,
+    "commandBuffer":[],
+    "objectList":{},
+    "netcatList":{},
+    "libList":{},
+    "sessionList":[],
+    "vars":{},
+}
+
+user_session = {
+    "theme":{
+        "title":"#e60000",   // red
+        "text":"#404040",    // dark-grey
+        "arg":"#00ff00",     // green
+        "bool":"#00ace6",    // light-blue
+        "outline":"#404040", // dark-grey
+        "start_color":"#e60000",
+        "handler_color":"#00ff00",
+    },
+    "static":{
+        "logo":"#cccccc",    // grey
+        "credits":"#ffffff", // white
+        "red":"#e60000",
+        "green":"#00ff00",
+        "dark_grey":"#404040",
+        "yellow":"#e6e600",
+        "blue":"#000099",
+        "light_blue":"#00ace6",
+    },
+}
+import_code("/home/m0rr164n/Code/Viper/main/viper_image.src")
+import_code("/home/m0rr164n/Code/Viper/main/raw_image.src") 
+if params.indexOf("-a") != null or params.indexOf("--anonymous") != null then main_session.pub_ip = "HIDDEN"
+import_libs()
+update_check()
+addDefaultVars()
+if params.indexOf("--no-settings") == null and params.indexOf("-ns") == null then loadSettings()
+ascii_print()
+
+injectionFlag = "Congrats, you were able to inject Viper! Your flag code is: ^E%aW$%k#5UX=1ay3r8Eu=V87$n$+rDF"
+
+command_logic = function(input)
+    if main_session.vars.hasIndex(input[0]) then
+        input = main_session.vars[input[0]].split(" ")+input[1:]
+    end if
+
+    command = input[0].lower
+    rawArgs = input[1:]
+
+    args = []
+    for arg in rawArgs
+        if arg != "" then args.push(arg)
+    end for
+
+    if input.len < 2 then args = false
+
+    if command == "" then
+        return
+    else if not commands.hasIndex(command) then
+        print("Command "+command+" not found, type ""help"" for help. ")
+        return
+    else if commands[command].handler_types.indexOf(main_session.handlerType) == null then
+        txt = do_style("You can't use the command "+command+" in this handler!", "red", "static")
+        print(char(10)+txt)
+        commands[command].show_help()
+        return
+    end if
+
+    index=0
+    noVarCommands = ["vars", "addvar", "delvar"]
+    for argument in args
+        var = argument
+        arg = ""
+        if argument.split("\+").len > 1 then
+            var = argument.split("\+")[0]
+            arg = argument.split("\+")[1]
+        end if
+        if main_session.vars.hasIndex(var) and noVarCommands.indexOf(command) == null then args[index] = main_session.vars[var]+arg
+        index = index+1
+    end for
+
+    blacklist = ["buffer", "back", "targets", "clear"]
+    if blacklist.indexOf(command) == null then addToBuffer(command, args)
+    commands[command].run(main_session.object, args)
+end function
+
+while not main_session.exit
+    
+    input = user_input(TTY(main_session.object, main_session.handlerType, main_session.pub_ip, main_session.loc_ip, main_session.current_user)).split(" ")
+    
+    command = input[0]
+    
+    args = input[1:]
+    
+    if command.split("@").len >= 2 then
+        
+        macro_file = get_shell.host_computer.File(home_dir+"/Config/Macros/"+command.split("@")[1])
+        
+        if active_user == "root" then macro_file = get_shell.host_computer.File("/root/Config/Macros/"+command.split("@")[1])
+
+        if not macro_file then; print("Macro not found!"); continue; end if
+        
+        print("Macro detected...")
+        
+        for macro in macro_file.get_content.split(char(10))
+        
+            input = macro.split(" ")
+        
+            command_logic(input)
+
+        end for
+        
+        print("Macro finished!")
+
+        continue
+        
+    end if
+
+    command_logic(input)
+
+end while
+
+>>>>>>> Stashed changes:images/viper.src

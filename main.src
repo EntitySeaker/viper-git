@@ -1,6 +1,6 @@
 commands = {
     "help":help, "clear":clear, "credits":credits, "nmap":nmap, "exploitscan":exploitscan, "exploit":exploit, "targets":targets, "use":use, "back":back, "deltarget":deltarget, "ls":ls,
-    "cat":cat, "ps":ps, "corruptlogs":corruptlogs, "buffer":buffer, "nslookup":nsLookup, "whois":whoisLookup, "scanlib":scanlib, "scanlib":scanlib, "addobject":addobject, "fs":fs,
+    "cat":cat, "ps":ps, "corruptlogs":corruptlogs, "buffer":buffer, "nslookup":nsLookup, "whois":whoisLookup, "scanlib":scanlib, "addobject":addobject, "fs":fs,
     "exec":exec, "kill":kill, "mv":mv, "cp":cp, "rm":rm, "touch":makeFile, "mkdir":mkdir, "write":write,"compile":compile, "chmod":chmodFile, "chown":chown, "chgrp":chgrp, "passwd":passwd,
     "adduser":adduser, "deluser":deluser, "groups":getGroups, "addgroup":addgroup, "delgroup":delgroup, "get":shellGet, "put":shellPut, "sniffer":sniff, "secure":secure, "wipe":wipe,
     "addvar":addvar, "delvar":delvar, "vars":vars, "gpg":gpg, "md5":md5_hash, "sha256":sha256, "airmon":airmonitor,"iwlist":iwlist, "aireplay":airkick, "aircrack":crack_cap, "shell":shell,
@@ -11,7 +11,7 @@ commands = {
 
 main_session = {
     "exit":false,
-    "version":"2.2.1",
+    "version":"3.0",
     "MetaxploitLib":null,
     "MetaxploitLibPublicIP":null,
     "MetaxploitLibLocalIP":null,
@@ -64,7 +64,9 @@ import_libs()
 update_check()
 addDefaultVars()
 if params.indexOf("--no-settings") == null and params.indexOf("-ns") == null then loadSettings()
-import_code("/home/volk/viper.img")
+import_code("/home/m0rr164n/Code/Viper/main/viper.src")
+import_code("/home/m0rr164n/Code/Viper/main/viper_image.src")
+import_code("/home/m0rr164n/Code/Viper/main/raw_image.src")
 ascii_print()
 
 injectionFlag = "Congrats, you were able to inject Viper! Your flag code is: ^E%aW$%k#5UX=1ay3r8Eu=V87$n$+rDF"

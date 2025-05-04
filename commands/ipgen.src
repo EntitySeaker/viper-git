@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 // Color constants for better output
+=======
+/ Color constants for better output
+>>>>>>> Stashed changes
     COLOR_DEFAULT = "#009900"
     COLOR_ERROR = "#FF0000"
     COLOR_INFO = "#33CCFF"
@@ -188,7 +192,11 @@
                 printMsg("Invalid input. Please enter a numeric value.", COLOR_ERROR)
                 return
             end if
+<<<<<<< Updated upstream
             
+=======
+           
+>>>>>>> Stashed changes
             if not (ipCountLimit > 0) then
                 printMsg("Please enter a positive number", COLOR_ERROR)
                 return
@@ -226,9 +234,15 @@
     ipgen.args = "[IP_COUNT] (LIBRARY) (VERSION)"
     ipgen.desc = "Scans for services and generates valid IP addresses."
     ipgen.full_desc = "This command scans a specified number of IPs and searches for a given library/service.\n" + 
+<<<<<<< Updated upstream
                         "Where [IP_COUNT] is the number of IPs to scan,\n" + 
                         "where (LIBRARY) is the optional service to scan for,\n" + 
                         "where (VERSION) is the optional version of the service."
+=======
+                      "Where [IP_COUNT] is the number of IPs to scan,\n" + 
+                      "where (LIBRARY) is the optional service to scan for,\n" + 
+                      "where (VERSION) is the optional version of the service."
+>>>>>>> Stashed changes
     
     ipgen.handler_types = ["start", "shell"]
     ipgen.run = function(object, args)
@@ -270,7 +284,11 @@
     
         ipgen_main(ipCountLimit, lib, ver)
     end function
+<<<<<<< Updated upstream
         
+=======
+    
+>>>>>>> Stashed changes
     ipgen.show_help = function()
         show_help(self.name, self.args, self.full_desc, self.handler_types)
     end function

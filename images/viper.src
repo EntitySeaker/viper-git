@@ -2717,6 +2717,72 @@ end function
 scanlib.show_help = function()
     show_help(self.name, self.args, self.full_desc, self.handler_types)
 end function
+
+// Helper function to generate fixed-width columns
+pad = function(text, width)
+    spaces = ""
+    for i in range(width - text.len)
+        spaces = spaces + " "
+    end for
+    return text + spaces
+end function
+
+scanrouter = {}
+scanrouter.name = "scanrouter"
+scanrouter.args = "[Ip]"
+scanrouter.desc = "Scans a router for details"
+scanrouter.full_desc = "This command will scan a router and print all its information"
+scanrouter.handler_types = ["start", "shell", "computer", "file"]
+scanrouter.run = function(object, args)
+    if args.len < 1 or args[0].trim() == "-h" or args[0].trim() == "--help" then
+        return command_info("scanrouter_usage")
+    end if
+
+    ipAddress = args[0]
+    router = get_router(ipAddress)
+    
+    if router == null then
+        return "scanrouter: IP address not found"
+    end if
+
+    print("Connecting to router at address: " + ipAddress + "\nScanning kernel library...")
+
+    version = router.kernel_version
+    if not version then
+        print("Warning: kernel_router.so not found")
+    else
+        print("kernel_router.so : v" + version)
+    end if
+
+    firewall_rules = router.firewall_rules
+
+    print("\nScanning firewall rules...")
+
+    if typeof(firewall_rules) == "string" then
+        print("Firewall rules error: " + firewall_rules)
+        return
+    end if
+
+    if firewall_rules == null or firewall_rules.len == 0 then
+        print("No rules found.")
+    else
+        // **Updated header with consistent spacing**
+        print("\nACTION       PORT       SOURCE_IP        DESTINATION_IP")
+
+        for rule in firewall_rules
+            fields = rule.split(" ")  
+
+            // **Ensure perfect column alignment**
+            print(pad(fields[0], 12) + pad(fields[1], 10) + pad(fields[2], 18) + pad(fields[3], 18))  // Reduce DESTINATION_IP padding from 20 to 18
+        end for
+    end if
+end function
+
+scanrouter.show_help = function()
+     show_help(self.name, self.args, self.full_desc, self.handler_types)
+end function
+
+
 secure = {}
 secure.name = "secure"
 secure.args = "[-home/-server]"
@@ -3159,7 +3225,7 @@ commands = {
     "addvar":addvar, "delvar":delvar, "vars":vars, "gpg":gpg, "md5":md5_hash, "sha256":sha256, "airmon":airmonitor,"iwlist":iwlist, "aireplay":airkick, "aircrack":crack_cap, "shell":shell,
     "loop":loop, "ssh":ssh, "sudo":sudo, "jump":jump, "msfvenom":msfvenom, "msfconsole":msfconsole, "grab":grab, "findlib":findlib, "deepscan":deepscan, "apt-get":aptget, "libs":libs,
     "uselib":uselib, "getlib":getlib, "dellib":dellib, "crack":crack, "getviper":getviper, "exit":do_exit, "save-settings":saveSettings, "load-theme":load_theme, "return":returnStart,
-    "echo":echo, "ipgen":ipgen,
+    "echo":echo, "ipgen":ipgen, "scanrouter":scanrouter,
 }
 
 main_session = {

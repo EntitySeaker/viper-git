@@ -19,12 +19,28 @@ chmodFile.run = function(object, args)
         pathFile = args[2]
         isRecursive = 1
     end if
+    if permissions.is_match("[0-7]{3}") then
+        ugo = "ugo"
+        file = findFile(object, pathFile)
+        if file == null then; print("chmod: can't find " + pathFile); return; end if
+        for i in range(len(permissions)-1)
+            addPerm = ugo[i]+"+"
+            rmPerm = ugo[i]+"-"
 
-    file = findFile(object, pathFile)
-    if file == null then; print("chmod: can't find " + pathFile); return; end if
-    output = file.chmod(permissions, isRecursive)
-    if output then print(output)
+            if bitwise("&",permissions[i].val,4) then addPerm=addPerm+"r" else rmPerm=rmPerm+"r"
+            if bitwise("&",permissions[i].val,2) then addPerm=addPerm+"w" else rmPerm=rmPerm+"w"
+            if bitwise("&",permissions[i].val,1) then addPerm=addPerm+"x" else rmPerm=rmPerm+"x"
 
+            if addPerm != ugo[i]+"+" then output = file.chmod(addPerm, isRecursive)
+            if rmPerm != ugo[i]+"-" then output = file.chmod(rmPerm, isRecursive)
+        end for
+        if output then print(output)
+    else
+        file = findFile(object, pathFile)
+        if file == null then; print("chmod: can't find " + pathFile); return; end if
+        output = file.chmod(permissions, isRecursive)
+        if output then print(output)
+    end if
 end function
 
 chmodFile.show_help = function()
